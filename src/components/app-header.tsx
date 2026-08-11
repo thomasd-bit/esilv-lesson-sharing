@@ -24,6 +24,7 @@ export function AppHeader({ displayName, email }: { displayName: string; email: 
       </Link>
       <nav className="header-nav" aria-label="Navigation principale">
         <Link href="/">Ressources</Link>
+        <Link href="/saved">Enregistrés</Link>
         <Link href="/profile">Mon profil</Link>
       </nav>
       <div className="header-actions">
@@ -42,4 +43,3 @@ export function AppHeader({ displayName, email }: { displayName: string; email: 
     </header>
   );
 }
-
