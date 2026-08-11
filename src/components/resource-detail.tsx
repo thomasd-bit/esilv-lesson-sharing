@@ -1,0 +1,208 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { Bookmark, Check, ExternalLink, FileDown, Flag, Heart, LoaderCircle, MessageCircle, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { formatDate, initials } from "@/lib/format";
+import { commentSchema, firstValidationError } from "@/lib/validation";
+import { RESOURCE_KIND_LABELS, type Profile, type Resource, type ResourceComment } from "@/lib/types";
+
+type Props = {
+  resource: Resource;
+  author: Profile | null;
+  currentUserId: string;
+};
+
+export function ResourceDetail({ resource, author, currentUserId }: Props) {
+  const router = useRouter();
+  const [likeCount, setLikeCount] = useState(0);
+  const [liked, setLiked] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [comments, setComments] = useState<ResourceComment[]>([]);
+  const [commentBody, setCommentBody] = useState("");
+  const [commentError, setCommentError] = useState<string | null>(null);
+  const [socialLoading, setSocialLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<"like" | "save" | "comment" | "file" | "delete" | null>(null);
+  const [reporting, setReporting] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [reportMessage, setReportMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    async function loadSocialData() {
+      const supabase = createClient();
+      const [{ count }, { data: ownLike }, { data: ownSave }, { data: rawComments }] = await Promise.all([
+        supabase.from("resource_likes").select("resource_id", { count: "exact", head: true }).eq("resource_id", resource.id),
+        supabase.from("resource_likes").select("resource_id").eq("resource_id", resource.id).eq("user_id", currentUserId).maybeSingle(),
+        supabase.from("resource_saves").select("resource_id").eq("resource_id", resource.id).eq("user_id", currentUserId).maybeSingle(),
+        supabase.from("resource_comments").select("id, resource_id, author_id, body, created_at").eq("resource_id", resource.id).order("created_at", { ascending: true }),
+      ]);
+      const commentRows = (rawComments ?? []) as Array<Omit<ResourceComment, "author">>;
+      const authorIds = [...new Set(commentRows.map((comment) => comment.author_id))];
+      const { data: profiles } = authorIds.length
+        ? await supabase.from("profiles").select("id, display_name, programme, study_year, avatar_url, created_at").in("id", authorIds)
+        : { data: [] };
+      const profileRows = (profiles ?? []) as unknown as Profile[];
+      const profileById = new Map(profileRows.map((profile) => [profile.id, profile]));
+      if (!active) return;
+      setLikeCount(count ?? 0);
+      setLiked(Boolean(ownLike));
+      setSaved(Boolean(ownSave));
+      setComments(commentRows.map((comment) => ({ ...comment, author: profileById.get(comment.author_id) ?? null })));
+      setSocialLoading(false);
+    }
+    void loadSocialData();
+    return () => { active = false; };
+  }, [currentUserId, resource.id]);
+
+  async function toggleLike() {
+    setActionLoading("like");
+    const supabase = createClient();
+    if (liked) {
+      const { error } = await supabase.from("resource_likes").delete().eq("resource_id", resource.id).eq("user_id", currentUserId);
+      if (!error) { setLiked(false); setLikeCount((count) => Math.max(0, count - 1)); }
+    } else {
+      const { error } = await supabase.from("resource_likes").insert({ resource_id: resource.id, user_id: currentUserId });
+      if (!error) { setLiked(true); setLikeCount((count) => count + 1); }
+    }
+    setActionLoading(null);
+  }
+
+  async function toggleSave() {
+    setActionLoading("save");
+    const supabase = createClient();
+    if (saved) {
+      const { error } = await supabase.from("resource_saves").delete().eq("resource_id", resource.id).eq("user_id", currentUserId);
+      if (!error) setSaved(false);
+    } else {
+      const { error } = await supabase.from("resource_saves").insert({ resource_id: resource.id, user_id: currentUserId });
+      if (!error) setSaved(true);
+    }
+    setActionLoading(null);
+  }
+
+  async function downloadFile() {
+    if (!resource.file_path) return;
+    setActionLoading("file");
+    const { data, error } = await createClient().storage.from("resource-files").createSignedUrl(resource.file_path, 60 * 10);
+    if (!error && data?.signedUrl) window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+    setActionLoading(null);
+  }
+
+  async function submitComment(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const parsed = commentSchema.safeParse({ body: commentBody });
+    if (!parsed.success) { setCommentError(firstValidationError(parsed.error)); return; }
+    setActionLoading("comment");
+    setCommentError(null);
+    const supabase = createClient();
+    const { data, error } = await supabase.from("resource_comments").insert({ resource_id: resource.id, author_id: currentUserId, body: commentBody.trim() }).select("id, resource_id, author_id, body, created_at").single();
+    if (error || !data) {
+      setCommentError("Le commentaire n’a pas pu être publié.");
+      setActionLoading(null);
+      return;
+    }
+    setComments((current) => [...current, { ...(data as Omit<ResourceComment, "author">), author: authorForCurrentUser(currentUserId) }]);
+    setCommentBody("");
+    setActionLoading(null);
+  }
+
+  function authorForCurrentUser(id: string): Profile | null {
+    if (id !== currentUserId) return null;
+    return author?.id === currentUserId ? author : { id, display_name: "Vous", programme: null, study_year: null, avatar_url: null, created_at: new Date().toISOString() };
+  }
+
+  async function submitReport(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (reportReason.trim().length < 5) { setReportMessage("Décrivez rapidement le problème à signaler."); return; }
+    const { error } = await createClient().from("resource_reports").insert({ resource_id: resource.id, reporter_id: currentUserId, reason: reportReason.trim() });
+    setReportMessage(error ? "Le signalement n’a pas pu être envoyé." : "Merci, le signalement a été transmis.");
+    if (!error) { setReportReason(""); setReporting(false); }
+  }
+
+  async function deleteResource() {
+    if (!window.confirm("Supprimer cette ressource ? Cette action est définitive.")) return;
+    setActionLoading("delete");
+    const supabase = createClient();
+    const { error } = await supabase.from("resources").delete().eq("id", resource.id).eq("author_id", currentUserId);
+    if (!error) {
+      if (resource.file_path) await supabase.storage.from("resource-files").remove([resource.file_path]);
+      router.replace("/");
+      router.refresh();
+      return;
+    }
+    setActionLoading(null);
+  }
+
+  return (
+    <div className="detail-layout">
+      <article className="detail-card">
+        <div className="detail-top">
+          <span className="kind-label">{RESOURCE_KIND_LABELS[resource.kind]}</span>
+          <span className="field-hint">Publié le {formatDate(resource.created_at)}</span>
+        </div>
+        <h1>{resource.title}</h1>
+        <div className="detail-meta">
+          <span className="pill">{resource.subject}</span>
+          <span className="pill">{resource.programme}</span>
+          <span className="pill">{resource.study_year}</span>
+        </div>
+        <p className="detail-description">{resource.description}</p>
+        <div className="detail-actions">
+          {resource.link_url ? <a className="button button-primary button-small" href={resource.link_url} target="_blank" rel="noreferrer"><ExternalLink size={15} /> Ouvrir le lien</a> : null}
+          {resource.file_path ? <button className="button button-primary button-small" onClick={() => void downloadFile()} disabled={actionLoading === "file"} type="button">{actionLoading === "file" ? <LoaderCircle className="spin" size={15} /> : <FileDown size={15} />} Télécharger le fichier</button> : null}
+          <button className={`action-button ${liked ? "action-button-active" : ""}`} onClick={() => void toggleLike()} disabled={actionLoading === "like"} type="button"><Heart size={15} fill={liked ? "currentColor" : "none"} /> {likeCount}</button>
+          <button className={`action-button ${saved ? "action-button-active" : ""}`} onClick={() => void toggleSave()} disabled={actionLoading === "save"} type="button"><Bookmark size={15} fill={saved ? "currentColor" : "none"} /> {saved ? "Enregistré" : "Garder"}</button>
+          <button className="action-button" onClick={() => setReporting((value) => !value)} type="button"><Flag size={15} /> Signaler</button>
+          {resource.author_id === currentUserId ? <button className="action-button" onClick={() => void deleteResource()} disabled={actionLoading === "delete"} type="button"><Trash2 size={15} /> Supprimer</button> : null}
+        </div>
+        {reporting ? (
+          <form className="comment-form" onSubmit={(event) => void submitReport(event)} style={{ marginTop: "18px" }}>
+            <label className="field-hint" htmlFor="reportReason">Qu’est-ce qui pose problème ?</label>
+            <textarea id="reportReason" value={reportReason} onChange={(event) => setReportReason(event.target.value)} placeholder="Lien mort, contenu inapproprié, erreur…" />
+            <button className="button button-secondary button-small" type="submit">Envoyer le signalement</button>
+          </form>
+        ) : null}
+        {reportMessage ? <p className="form-success" style={{ marginTop: "16px" }}>{reportMessage}</p> : null}
+
+        <section className="comments-section" aria-labelledby="comments-title">
+          <h2 id="comments-title"><MessageCircle size={20} style={{ verticalAlign: "-3px", marginRight: "6px" }} /> Retours de la promo</h2>
+          <form className="comment-form" onSubmit={(event) => void submitComment(event)}>
+            <textarea value={commentBody} onChange={(event) => setCommentBody(event.target.value)} placeholder="Une précision, une correction ou un conseil pour les suivants…" aria-label="Votre commentaire" />
+            <div className="inline-actions" style={{ justifyContent: "space-between" }}>
+              {commentError ? <span className="field-error" role="alert">{commentError}</span> : <span className="field-hint">Soyez précis et bienveillant.</span>}
+              <button className="button button-secondary button-small" disabled={actionLoading === "comment"} type="submit">{actionLoading === "comment" ? <LoaderCircle className="spin" size={15} /> : <Check size={15} />} Publier</button>
+            </div>
+          </form>
+          {socialLoading ? <div className="field-hint"><LoaderCircle className="spin" size={15} /> Chargement des retours…</div> : comments.length === 0 ? <p className="field-hint">Pas encore de retour. Le premier commentaire peut faire gagner du temps à toute une promo.</p> : comments.map((comment) => <Comment key={comment.id} comment={comment} />)}
+        </section>
+      </article>
+
+      <aside className="side-card">
+        <h2>À propos du partage</h2>
+        <div className="profile-card-top">
+          <span className="avatar">{initials(author?.display_name ?? "Étudiant")}</span>
+          <div><strong>{author?.display_name ?? "Étudiant"}</strong><small>{author?.programme ?? "Membre de la communauté"}</small></div>
+        </div>
+        <ul className="side-list">
+          <li><Check size={16} /> Ce support a été déposé volontairement par un étudiant.</li>
+          <li><MessageCircle size={16} /> Ajoutez un retour si vous repérez une mise à jour utile.</li>
+          <li><Flag size={16} /> Signalez les liens morts ou les contenus qui n’ont rien à faire ici.</li>
+        </ul>
+        <Link className="button button-secondary button-small" style={{ width: "100%", marginTop: "20px" }} href="/">Voir d’autres ressources</Link>
+      </aside>
+    </div>
+  );
+}
+
+function Comment({ comment }: { comment: ResourceComment }) {
+  const name = comment.author?.display_name ?? "Étudiant";
+  return (
+    <article className="comment">
+      <div className="comment-top"><span className="avatar">{initials(name)}</span><strong>{name}</strong><time dateTime={comment.created_at}>{formatDate(comment.created_at)}</time></div>
+      <p>{comment.body}</p>
+    </article>
+  );
+}
