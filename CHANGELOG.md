@@ -11,4 +11,6 @@
 - profil étudiant modifiable ;
 - schéma Supabase avec RLS, stockage privé et trigger de création de profil ;
 - tests de validation et documentation de mise en route.
-
+- page dédiée aux ressources sauvegardées ;
+- garde-fou SQL sur les domaines e-mail autorisés ;
+- workflow GitHub Actions pour typecheck, lint, tests et build.

@@ -44,7 +44,7 @@ NEXT_PUBLIC_ALLOWED_EMAIL_DOMAINS=devinci.fr,edu.devinci.fr,ext.devinci.fr,esilv
 4. Dans Authentication → Providers → Email, choisissez si les nouveaux comptes doivent confirmer leur adresse. En production, gardez la confirmation activée.
 5. Copiez l’URL du projet et sa publishable key dans `.env.local`.
 
-La migration crée les tables de profils, ressources, likes, sauvegardes, commentaires et signalements. Elle active RLS sur chaque table et crée le bucket privé `resource-files`. La clé secrète Supabase ne doit jamais être mise dans le navigateur ni dans Git.
+Les migrations créent les tables de profils, ressources, likes, sauvegardes, commentaires et signalements, ainsi qu’une liste de domaines autorisés pour l’inscription. Elles activent RLS sur chaque table et créent le bucket privé `resource-files`. La clé secrète Supabase ne doit jamais être mise dans le navigateur ni dans Git.
 
 ## Vérifier le projet
 
@@ -73,4 +73,3 @@ supabase/migrations/     Schéma SQL et politiques RLS
 ## Contribuer
 
 Consultez [CONTRIBUTING.md](CONTRIBUTING.md) avant d’ouvrir une issue ou une pull request. Les retours de vrais étudiants sont particulièrement utiles pour choisir les filtres, les formations et les règles de modération.
-
