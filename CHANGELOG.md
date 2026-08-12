@@ -1,5 +1,11 @@
 # Journal des changements
 
+## [0.5.18] - 2026-08-12
+
+### Parcours étudiant
+
+- marquage fiable d’une notification comme lue avant l’ouverture de la ressource associée ;
+
 ## [0.5.17] - 2026-08-12
 
 ### Parcours étudiant
