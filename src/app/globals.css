@@ -807,7 +807,7 @@ code {
 
 .filters {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) auto auto auto;
+  grid-template-columns: minmax(200px, 1fr) repeat(4, auto) auto;
   gap: 10px;
   margin-bottom: 20px;
 }
@@ -835,6 +835,22 @@ code {
   border-radius: var(--radius-sm);
   color: var(--ink);
   background: white;
+}
+
+.filter-reset {
+  min-height: 45px;
+  padding: 0 4px;
+  border: 0;
+  color: var(--blue);
+  background: transparent;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.filter-reset:hover {
+  color: var(--coral);
+  text-decoration: underline;
 }
 
 .resource-grid {

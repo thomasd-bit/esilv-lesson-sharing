@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sortResources } from "@/lib/resources";
+import { getProgrammeOptions, sortResources } from "@/lib/resources";
 import type { ResourceWithAuthor } from "@/lib/types";
 
 const baseResource = {
@@ -35,5 +35,16 @@ describe("tri du fil de ressources", () => {
       resource("new", "2026-08-12T10:00:00.000Z", 2),
     ], "popular");
     expect(sorted.map((item) => item.id)).toEqual(["new", "old"]);
+  });
+});
+
+describe("options de formation", () => {
+  it("déduplique les formations sans tenir compte de la casse", () => {
+    const options = getProgrammeOptions([
+      resource("cycle", "2026-08-12T10:00:00.000Z", 0),
+      { ...resource("iim", "2026-08-11T10:00:00.000Z", 0), programme: " IIM " },
+      { ...resource("duplicate", "2026-08-10T10:00:00.000Z", 0), programme: "cycle ingénieur" },
+    ]);
+    expect(options).toEqual(["Cycle ingénieur", "IIM"]);
   });
 });

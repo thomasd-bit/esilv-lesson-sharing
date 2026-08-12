@@ -8,7 +8,7 @@ import { ResourceCard } from "@/components/resource-card";
 import { createClient } from "@/lib/supabase/client";
 import { appConfig } from "@/lib/config";
 import { getProfileCompletion } from "@/lib/profile";
-import { sortResources, type ResourceSort } from "@/lib/resources";
+import { getProgrammeOptions, sortResources, type ResourceSort } from "@/lib/resources";
 import { RESOURCE_KINDS, STUDY_YEARS, type Profile, type Resource, type ResourceKind, type ResourceWithAuthor, type StudyYear } from "@/lib/types";
 
 type DashboardProps = {
@@ -24,6 +24,8 @@ export function Dashboard({ email, profile, userId, isMaintainer }: DashboardPro
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [kind, setKind] = useState<"all" | ResourceKind>("all");
   const [year, setYear] = useState<"all" | StudyYear>("all");
+  const [programme, setProgramme] = useState("all");
+  const [availableProgrammes, setAvailableProgrammes] = useState<string[]>([]);
   const [sort, setSort] = useState<ResourceSort>("recent");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -53,6 +55,9 @@ export function Dashboard({ email, profile, userId, isMaintainer }: DashboardPro
       if (year !== "all") {
         request = request.eq("study_year", year);
       }
+      if (programme !== "all") {
+        request = request.eq("programme", programme);
+      }
 
       const cleanedSearch = debouncedSearch.replace(/[,%()]/g, " ").slice(0, 80);
       if (cleanedSearch) {
@@ -68,6 +73,7 @@ export function Dashboard({ email, profile, userId, isMaintainer }: DashboardPro
       }
 
       const rows = (data ?? []) as Resource[];
+      if (programme === "all") setAvailableProgrammes(getProgrammeOptions(rows));
       const authorIds = [...new Set(rows.map((resource) => resource.author_id))];
       const resourceIds = rows.map((resource) => resource.id);
       const [{ data: profiles }, { data: likes }] = await Promise.all([
@@ -95,9 +101,13 @@ export function Dashboard({ email, profile, userId, isMaintainer }: DashboardPro
 
     void loadResources();
     return () => { active = false; };
-  }, [debouncedSearch, kind, year]);
+  }, [debouncedSearch, kind, programme, year]);
 
   const visibleResources = useMemo(() => sortResources(resources, sort), [resources, sort]);
+  const programmeOptions = useMemo(() => programme === "all" || availableProgrammes.includes(programme)
+    ? availableProgrammes
+    : [programme, ...availableProgrammes], [availableProgrammes, programme]);
+  const hasActiveFilters = Boolean(search.trim()) || kind !== "all" || year !== "all" || programme !== "all" || sort !== "recent";
   const programmeCount = useMemo(() => new Set(visibleResources.map((resource) => resource.programme)).size, [visibleResources]);
   const displayName = profile?.display_name ?? email.split("@")[0] ?? "Étudiant";
   const profileCompletion = getProfileCompletion(profile);
@@ -164,10 +174,15 @@ export function Dashboard({ email, profile, userId, isMaintainer }: DashboardPro
               <option value="all">Toutes les années</option>
               {STUDY_YEARS.map((studyYear) => <option key={studyYear} value={studyYear}>{studyYear}</option>)}
             </select>
+            <select className="filter-select" value={programme} onChange={(event) => setProgramme(event.target.value)} aria-label="Filtrer par formation">
+              <option value="all">Toutes les formations</option>
+              {programmeOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+            </select>
             <select className="filter-select" value={sort} onChange={(event) => setSort(event.target.value as ResourceSort)} aria-label="Trier les ressources">
               <option value="recent">Plus récentes</option>
               <option value="popular">Plus appréciées</option>
             </select>
+            {hasActiveFilters ? <button className="filter-reset" onClick={() => { setSearch(""); setKind("all"); setYear("all"); setProgramme("all"); setSort("recent"); }} type="button">Réinitialiser</button> : null}
           </div>
 
           {loading ? (
