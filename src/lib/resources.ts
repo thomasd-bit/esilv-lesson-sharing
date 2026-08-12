@@ -1,10 +1,22 @@
 import type { ResourceWithAuthor } from "@/lib/types";
 
 export type ResourceSort = "recent" | "popular";
+export type ResourceAction = "like" | "save" | "file" | "delete";
 
 export type ResourceOrder = { column: "created_at" | "like_count"; ascending: false };
 
 export const RESOURCE_PAGE_SIZE = 24;
+
+export function getResourceActionErrorMessage(action: ResourceAction) {
+  const messages: Record<ResourceAction, string> = {
+    like: "L’appréciation n’a pas pu être enregistrée. Réessayez dans un instant.",
+    save: "La sauvegarde n’a pas pu être mise à jour. Réessayez dans un instant.",
+    file: "Le fichier ne peut pas être ouvert pour le moment. Réessayez dans un instant.",
+    delete: "La ressource n’a pas pu être supprimée. Réessayez dans un instant.",
+  };
+
+  return messages[action];
+}
 
 export function getResourcePageRange(offset: number, pageSize = RESOURCE_PAGE_SIZE) {
   const safeOffset = Math.max(0, Math.floor(offset));

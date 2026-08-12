@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getProgrammeOptions, getResourceOrder, getResourcePageRange, hasMoreResourcePage, RESOURCE_PAGE_SIZE, sortResources } from "@/lib/resources";
+import { getProgrammeOptions, getResourceActionErrorMessage, getResourceOrder, getResourcePageRange, hasMoreResourcePage, RESOURCE_PAGE_SIZE, sortResources } from "@/lib/resources";
 import type { ResourceWithAuthor } from "@/lib/types";
 
 const baseResource = {
@@ -68,5 +68,15 @@ describe("ordre demandé au fil", () => {
       { column: "created_at", ascending: false },
     ]);
     expect(getResourceOrder("recent")).toEqual([{ column: "created_at", ascending: false }]);
+  });
+});
+
+describe("retours d’action sur une ressource", () => {
+  it("fournit un message distinct pour chaque action récupérable", () => {
+    const actions = ["like", "save", "file", "delete"] as const;
+    const messages = actions.map((action) => getResourceActionErrorMessage(action));
+
+    expect(messages.every((message) => message.length > 0)).toBe(true);
+    expect(new Set(messages).size).toBe(actions.length);
   });
 });

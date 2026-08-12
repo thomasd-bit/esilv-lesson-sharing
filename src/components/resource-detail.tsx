@@ -9,6 +9,7 @@ import { formatDate, formatMetric, initials, wasEdited } from "@/lib/format";
 import { COMMENT_PAGE_SIZE, getCommentRange, hasMoreCommentPage } from "@/lib/comments";
 import { getResourceShareUrl } from "@/lib/share";
 import { reportSubmissionMessage } from "@/lib/reports";
+import { getResourceActionErrorMessage } from "@/lib/resources";
 import { commentSchema, firstValidationError } from "@/lib/validation";
 import { RESOURCE_KIND_LABELS, type Profile, type Resource, type ResourceComment } from "@/lib/types";
 
@@ -75,6 +76,7 @@ export function ResourceDetail({ resource, author, currentUserId }: Props) {
   const [editCommentError, setEditCommentError] = useState<string | null>(null);
   const [socialLoading, setSocialLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<"like" | "save" | "comment" | "file" | "delete" | "edit-comment" | "delete-comment" | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [shareState, setShareState] = useState<"idle" | "sharing" | "success" | "error">("idle");
   const [shareMethod, setShareMethod] = useState<"native" | "clipboard" | null>(null);
   const [reporting, setReporting] = useState(false);
@@ -112,36 +114,64 @@ export function ResourceDetail({ resource, author, currentUserId }: Props) {
 
   async function toggleLike() {
     setActionLoading("like");
-    const supabase = createClient();
-    if (liked) {
-      const { error } = await supabase.from("resource_likes").delete().eq("resource_id", resource.id).eq("user_id", currentUserId);
-      if (!error) { setLiked(false); setLikeCount((count) => Math.max(0, count - 1)); }
-    } else {
-      const { error } = await supabase.from("resource_likes").insert({ resource_id: resource.id, user_id: currentUserId });
-      if (!error) { setLiked(true); setLikeCount((count) => count + 1); }
+    setActionError(null);
+    try {
+      const supabase = createClient();
+      const { error } = liked
+        ? await supabase.from("resource_likes").delete().eq("resource_id", resource.id).eq("user_id", currentUserId)
+        : await supabase.from("resource_likes").insert({ resource_id: resource.id, user_id: currentUserId });
+      if (error) {
+        setActionError(getResourceActionErrorMessage("like"));
+      } else if (liked) {
+        setLiked(false);
+        setLikeCount((count) => Math.max(0, count - 1));
+      } else {
+        setLiked(true);
+        setLikeCount((count) => count + 1);
+      }
+    } catch {
+      setActionError(getResourceActionErrorMessage("like"));
+    } finally {
+      setActionLoading(null);
     }
-    setActionLoading(null);
   }
 
   async function toggleSave() {
     setActionLoading("save");
-    const supabase = createClient();
-    if (saved) {
-      const { error } = await supabase.from("resource_saves").delete().eq("resource_id", resource.id).eq("user_id", currentUserId);
-      if (!error) setSaved(false);
-    } else {
-      const { error } = await supabase.from("resource_saves").insert({ resource_id: resource.id, user_id: currentUserId });
-      if (!error) setSaved(true);
+    setActionError(null);
+    try {
+      const supabase = createClient();
+      const { error } = saved
+        ? await supabase.from("resource_saves").delete().eq("resource_id", resource.id).eq("user_id", currentUserId)
+        : await supabase.from("resource_saves").insert({ resource_id: resource.id, user_id: currentUserId });
+      if (error) {
+        setActionError(getResourceActionErrorMessage("save"));
+      } else {
+        setSaved(!saved);
+      }
+    } catch {
+      setActionError(getResourceActionErrorMessage("save"));
+    } finally {
+      setActionLoading(null);
     }
-    setActionLoading(null);
   }
 
   async function downloadFile() {
     if (!resource.file_path) return;
     setActionLoading("file");
-    const { data, error } = await createClient().storage.from("resource-files").createSignedUrl(resource.file_path, 60 * 10);
-    if (!error && data?.signedUrl) window.open(data.signedUrl, "_blank", "noopener,noreferrer");
-    setActionLoading(null);
+    setActionError(null);
+    try {
+      const { data, error } = await createClient().storage.from("resource-files").createSignedUrl(resource.file_path, 60 * 10);
+      if (error || !data?.signedUrl) {
+        setActionError(getResourceActionErrorMessage("file"));
+      } else {
+        window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+      }
+    } catch {
+      setActionError(getResourceActionErrorMessage("file"));
+    } finally {
+      setActionLoading(null);
+    }
   }
 
   async function shareResource() {
@@ -288,15 +318,22 @@ export function ResourceDetail({ resource, author, currentUserId }: Props) {
   async function deleteResource() {
     if (!window.confirm("Supprimer cette ressource ? Cette action est définitive.")) return;
     setActionLoading("delete");
-    const supabase = createClient();
-    const { error } = await supabase.from("resources").delete().eq("id", resource.id).eq("author_id", currentUserId);
-    if (!error) {
+    setActionError(null);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.from("resources").delete().eq("id", resource.id).eq("author_id", currentUserId);
+      if (error) {
+        setActionError(getResourceActionErrorMessage("delete"));
+        return;
+      }
       if (resource.file_path) await supabase.storage.from("resource-files").remove([resource.file_path]);
       router.replace("/");
       router.refresh();
-      return;
+    } catch {
+      setActionError(getResourceActionErrorMessage("delete"));
+    } finally {
+      setActionLoading(null);
     }
-    setActionLoading(null);
   }
 
   return (
@@ -322,6 +359,7 @@ export function ResourceDetail({ resource, author, currentUserId }: Props) {
           <button className="action-button" onClick={() => setReporting((value) => !value)} type="button"><Flag size={15} /> Signaler</button>
           {resource.author_id === currentUserId ? <><Link className="action-button" href={`/resources/${resource.id}/edit`}><Pencil size={15} /> Modifier</Link><button className="action-button" onClick={() => void deleteResource()} disabled={actionLoading === "delete"} type="button"><Trash2 size={15} /> Supprimer</button></> : null}
         </div>
+        {actionError ? <p className="form-error" role="alert" style={{ marginTop: "12px" }}>{actionError}</p> : null}
         {shareState === "success" ? <p className="form-success" role="status" style={{ marginTop: "12px" }}>{shareMethod === "clipboard" ? "Le lien de la ressource a été copié." : "La ressource est prête à être partagée."}</p> : null}
         {shareState === "error" ? <p className="form-error" role="alert" style={{ marginTop: "12px" }}>Le lien n’a pas pu être partagé depuis cet appareil.</p> : null}
         {reporting ? (
