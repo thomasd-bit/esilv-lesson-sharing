@@ -1,6 +1,6 @@
 # Journal des changements
 
-## [À venir]
+## [0.5.0] - 2026-08-12
 
 ### Mainteneur
 
