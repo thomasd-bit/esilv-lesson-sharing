@@ -1,5 +1,15 @@
 # Journal des changements
 
+## En préparation
+
+### Ajouté
+
+- récupération de compte par e-mail et changement de mot de passe depuis un lien sécurisé ;
+
+### Sécurité
+
+- callback d’authentification limité aux chemins internes pour éviter les redirections externes.
+
 ## [0.1.0] - 2026-08-11
 
 ### Ajouté

@@ -5,6 +5,16 @@ export const signInSchema = z.object({
   password: z.string().min(8, "Le mot de passe doit faire au moins 8 caractères."),
 });
 
+export const passwordResetSchema = z
+  .object({
+    password: z.string().min(8, "Le mot de passe doit faire au moins 8 caractères."),
+    confirmPassword: z.string().min(8, "Confirmez votre mot de passe."),
+  })
+  .refine((values) => values.password === values.confirmPassword, {
+    message: "Les deux mots de passe ne correspondent pas.",
+    path: ["confirmPassword"],
+  });
+
 export const signUpSchema = signInSchema.extend({
   displayName: z
     .string()

@@ -242,6 +242,9 @@ code {
 }
 
 .text-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   padding: 0;
   border: 0;
   color: var(--blue);
@@ -252,6 +255,28 @@ code {
 .text-button:hover {
   color: var(--blue-dark);
   text-decoration: underline;
+}
+
+.auth-reset-link {
+  justify-self: start;
+  font-size: 0.76rem;
+}
+
+.auth-back-link {
+  margin: 25px 0 5px;
+  font-size: 0.8rem;
+}
+
+.password-reset-page {
+  max-width: 800px;
+}
+
+.password-reset-card {
+  max-width: 520px;
+}
+
+.password-reset-intro {
+  margin: 18px 0 20px;
 }
 
 .auth-page {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { collectionSchema, resourceSchema, signInSchema, signUpSchema } from "@/lib/validation";
+import { collectionSchema, passwordResetSchema, resourceSchema, signInSchema, signUpSchema } from "@/lib/validation";
 
 describe("validation des comptes", () => {
   it("accepte une inscription complète", () => {
@@ -15,6 +15,11 @@ describe("validation des comptes", () => {
 
   it("refuse un mot de passe trop court", () => {
     const result = signInSchema.safeParse({ email: "camille@ecole.fr", password: "court" });
+    expect(result.success).toBe(false);
+  });
+
+  it("refuse une confirmation de mot de passe différente", () => {
+    const result = passwordResetSchema.safeParse({ password: "motdepasse-solide", confirmPassword: "autre-mot-de-passe" });
     expect(result.success).toBe(false);
   });
 });
