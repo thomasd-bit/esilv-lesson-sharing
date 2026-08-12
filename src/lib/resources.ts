@@ -1,7 +1,7 @@
 import { RESOURCE_KINDS, STUDY_YEARS, type ResourceKind, type ResourceWithAuthor, type StudyYear } from "@/lib/types";
 
 export type ResourceSort = "recent" | "popular" | "downloaded";
-export type ResourceAction = "like" | "save" | "file" | "delete";
+export type ResourceAction = "like" | "save" | "file" | "delete" | "comment" | "report";
 export type ResourceFilterState = {
   search: string;
   kind: "all" | ResourceKind;
@@ -59,6 +59,8 @@ export function getResourceActionErrorMessage(action: ResourceAction) {
     save: "La sauvegarde n’a pas pu être mise à jour. Réessayez dans un instant.",
     file: "Le fichier ne peut pas être ouvert pour le moment. Réessayez dans un instant.",
     delete: "La ressource n’a pas pu être supprimée. Réessayez dans un instant.",
+    comment: "Le commentaire n’a pas pu être enregistré. Vérifiez votre connexion puis réessayez.",
+    report: "Le signalement n’a pas pu être envoyé. Vérifiez votre connexion puis réessayez.",
   };
 
   return messages[action];

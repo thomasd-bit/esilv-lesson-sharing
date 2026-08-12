@@ -89,7 +89,7 @@ describe("ordre demandé au fil", () => {
 
 describe("retours d’action sur une ressource", () => {
   it("fournit un message distinct pour chaque action récupérable", () => {
-    const actions = ["like", "save", "file", "delete"] as const;
+    const actions = ["like", "save", "file", "delete", "comment", "report"] as const;
     const messages = actions.map((action) => getResourceActionErrorMessage(action));
 
     expect(messages.every((message) => message.length > 0)).toBe(true);

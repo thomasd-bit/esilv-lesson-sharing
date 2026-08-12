@@ -1,5 +1,12 @@
 # Journal des changements
 
+## [0.5.28] - 2026-08-12
+
+### Parcours social
+
+- les commentaires et signalements récupèrent maintenant les erreurs réseau sans laisser les actions bloquées en chargement ;
+- les boutons d’envoi reflètent leur état pour éviter les doubles soumissions.
+
 ## [0.5.27] - 2026-08-12
 
 ### Accès école

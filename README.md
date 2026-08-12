@@ -6,6 +6,8 @@ Le projet est volontairement simple dans son premier périmètre : un compte ét
 
 Les filtres du fil peuvent être conservés ou partagés directement depuis l’URL : `q` pour la recherche, `kind` pour le type, `year` pour l’année, `programme` pour la formation, `sort=popular` pour le tri par appréciations et `sort=downloaded` pour les supports les plus téléchargés. Une recherche active peut aussi être enregistrée sous un nom puis réappliquée depuis le fil, y compris lorsqu’elle utilise le tri par téléchargements, sur n’importe quelle session du même compte. Les valeurs inconnues sont ignorées au chargement.
 
+Les actions de commentaire et de signalement affichent leur état d’envoi et récupèrent les erreurs réseau afin qu’un étudiant puisse réessayer sans recharger la page.
+
 ## Stack
 
 - Next.js 16 et React 19 avec App Router ;

@@ -83,6 +83,7 @@ export function ResourceDetail({ resource, author, currentUserId }: Props) {
   const [reporting, setReporting] = useState(false);
   const [reportReason, setReportReason] = useState("");
   const [reportMessage, setReportMessage] = useState<string | null>(null);
+  const [reportSubmitting, setReportSubmitting] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -238,17 +239,21 @@ export function ResourceDetail({ resource, author, currentUserId }: Props) {
     if (!parsed.success) { setCommentError(firstValidationError(parsed.error)); return; }
     setActionLoading("comment");
     setCommentError(null);
-    const supabase = createClient();
-    const { data, error } = await supabase.from("resource_comments").insert({ resource_id: resource.id, author_id: currentUserId, body: commentBody.trim() }).select("id, resource_id, author_id, body, created_at, updated_at").single();
-    if (error || !data) {
-      setCommentError("Le commentaire n’a pas pu être publié.");
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.from("resource_comments").insert({ resource_id: resource.id, author_id: currentUserId, body: commentBody.trim() }).select("id, resource_id, author_id, body, created_at, updated_at").single();
+      if (error || !data) {
+        setCommentError(getResourceActionErrorMessage("comment"));
+        return;
+      }
+      setComments((current) => [...current, { ...(data as Omit<ResourceComment, "author">), author: authorForCurrentUser(currentUserId) }]);
+      setCommentCount((current) => current === null ? null : current + 1);
+      setCommentBody("");
+    } catch {
+      setCommentError(getResourceActionErrorMessage("comment"));
+    } finally {
       setActionLoading(null);
-      return;
     }
-    setComments((current) => [...current, { ...(data as Omit<ResourceComment, "author">), author: authorForCurrentUser(currentUserId) }]);
-    setCommentCount((current) => current === null ? null : current + 1);
-    setCommentBody("");
-    setActionLoading(null);
   }
 
   function startEditingComment(comment: ResourceComment) {
@@ -270,43 +275,51 @@ export function ResourceDetail({ resource, author, currentUserId }: Props) {
     if (!parsed.success) { setEditCommentError(firstValidationError(parsed.error)); return; }
     setActionLoading("edit-comment");
     setEditCommentError(null);
-    const { data, error } = await createClient()
-      .from("resource_comments")
-      .update({ body: parsed.data.body })
-      .eq("id", editingCommentId)
-      .eq("author_id", currentUserId)
-      .select("id, resource_id, author_id, body, created_at, updated_at")
-      .single();
-    if (error || !data) {
-      setEditCommentError("Le commentaire n’a pas pu être modifié.");
+    try {
+      const { data, error } = await createClient()
+        .from("resource_comments")
+        .update({ body: parsed.data.body })
+        .eq("id", editingCommentId)
+        .eq("author_id", currentUserId)
+        .select("id, resource_id, author_id, body, created_at, updated_at")
+        .single();
+      if (error || !data) {
+        setEditCommentError(getResourceActionErrorMessage("comment"));
+        return;
+      }
+      setComments((current) => current.map((comment) => comment.id === editingCommentId
+        ? { ...(data as Omit<ResourceComment, "author">), author: comment.author }
+        : comment));
+      cancelEditingComment();
+    } catch {
+      setEditCommentError(getResourceActionErrorMessage("comment"));
+    } finally {
       setActionLoading(null);
-      return;
     }
-    setComments((current) => current.map((comment) => comment.id === editingCommentId
-      ? { ...(data as Omit<ResourceComment, "author">), author: comment.author }
-      : comment));
-    cancelEditingComment();
-    setActionLoading(null);
   }
 
   async function deleteComment(comment: ResourceComment) {
     if (!window.confirm("Supprimer ce commentaire ? Cette action est définitive.")) return;
     setActionLoading("delete-comment");
-    const { error } = await createClient()
-      .from("resource_comments")
-      .delete()
-      .eq("id", comment.id)
-      .eq("author_id", currentUserId);
-    if (error) {
-      setCommentError("Le commentaire n’a pas pu être supprimé.");
+    try {
+      const { error } = await createClient()
+        .from("resource_comments")
+        .delete()
+        .eq("id", comment.id)
+        .eq("author_id", currentUserId);
+      if (error) {
+        setCommentError(getResourceActionErrorMessage("comment"));
+        return;
+      }
+      setComments((current) => current.filter((item) => item.id !== comment.id));
+      setCommentCount((current) => current === null ? null : Math.max(0, current - 1));
+      setCommentOffset((current) => Math.max(0, current - 1));
+      if (editingCommentId === comment.id) cancelEditingComment();
+    } catch {
+      setCommentError(getResourceActionErrorMessage("comment"));
+    } finally {
       setActionLoading(null);
-      return;
     }
-    setComments((current) => current.filter((item) => item.id !== comment.id));
-    setCommentCount((current) => current === null ? null : Math.max(0, current - 1));
-    setCommentOffset((current) => Math.max(0, current - 1));
-    if (editingCommentId === comment.id) cancelEditingComment();
-    setActionLoading(null);
   }
 
   function authorForCurrentUser(id: string): Profile | null {
@@ -316,10 +329,18 @@ export function ResourceDetail({ resource, author, currentUserId }: Props) {
 
   async function submitReport(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (reportSubmitting) return;
     if (reportReason.trim().length < 5) { setReportMessage("Décrivez rapidement le problème à signaler."); return; }
-    const { error } = await createClient().from("resource_reports").insert({ resource_id: resource.id, reporter_id: currentUserId, reason: reportReason.trim() });
-    setReportMessage(error ? reportSubmissionMessage(error.code) : "Merci, le signalement a été transmis.");
-    if (!error) { setReportReason(""); setReporting(false); }
+    setReportSubmitting(true);
+    try {
+      const { error } = await createClient().from("resource_reports").insert({ resource_id: resource.id, reporter_id: currentUserId, reason: reportReason.trim() });
+      setReportMessage(error ? reportSubmissionMessage(error.code) : "Merci, le signalement a été transmis.");
+      if (!error) { setReportReason(""); setReporting(false); }
+    } catch {
+      setReportMessage(getResourceActionErrorMessage("report"));
+    } finally {
+      setReportSubmitting(false);
+    }
   }
 
   async function deleteResource() {
@@ -373,7 +394,7 @@ export function ResourceDetail({ resource, author, currentUserId }: Props) {
           <form className="comment-form" onSubmit={(event) => void submitReport(event)} style={{ marginTop: "18px" }}>
             <label className="field-hint" htmlFor="reportReason">Qu’est-ce qui pose problème ?</label>
             <textarea id="reportReason" value={reportReason} onChange={(event) => setReportReason(event.target.value)} placeholder="Lien mort, contenu inapproprié, erreur…" />
-            <button className="button button-secondary button-small" type="submit">Envoyer le signalement</button>
+            <button className="button button-secondary button-small" disabled={reportSubmitting} type="submit">{reportSubmitting ? <LoaderCircle className="spin" size={15} /> : null}{reportSubmitting ? "Envoi…" : "Envoyer le signalement"}</button>
           </form>
         ) : null}
         {reportMessage ? <p className="form-success" style={{ marginTop: "16px" }}>{reportMessage}</p> : null}
