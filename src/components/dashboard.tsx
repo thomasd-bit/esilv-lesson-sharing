@@ -7,6 +7,7 @@ import { AppHeader } from "@/components/app-header";
 import { ResourceCard } from "@/components/resource-card";
 import { createClient } from "@/lib/supabase/client";
 import { appConfig } from "@/lib/config";
+import { sortResources, type ResourceSort } from "@/lib/resources";
 import { RESOURCE_KINDS, STUDY_YEARS, type Profile, type Resource, type ResourceKind, type ResourceWithAuthor, type StudyYear } from "@/lib/types";
 
 type DashboardProps = {
@@ -18,10 +19,17 @@ type DashboardProps = {
 export function Dashboard({ email, profile, userId }: DashboardProps) {
   const [resources, setResources] = useState<ResourceWithAuthor[]>([]);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [kind, setKind] = useState<"all" | ResourceKind>("all");
   const [year, setYear] = useState<"all" | StudyYear>("all");
+  const [sort, setSort] = useState<ResourceSort>("recent");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setDebouncedSearch(search.trim()), 250);
+    return () => window.clearTimeout(timeout);
+  }, [search]);
 
   useEffect(() => {
     let active = true;
@@ -44,7 +52,7 @@ export function Dashboard({ email, profile, userId }: DashboardProps) {
         request = request.eq("study_year", year);
       }
 
-      const cleanedSearch = search.trim().replace(/[,%()]/g, " ").slice(0, 80);
+      const cleanedSearch = debouncedSearch.replace(/[,%()]/g, " ").slice(0, 80);
       if (cleanedSearch) {
         request = request.or(`title.ilike.%${cleanedSearch}%,description.ilike.%${cleanedSearch}%,subject.ilike.%${cleanedSearch}%`);
       }
@@ -59,21 +67,36 @@ export function Dashboard({ email, profile, userId }: DashboardProps) {
 
       const rows = (data ?? []) as Resource[];
       const authorIds = [...new Set(rows.map((resource) => resource.author_id))];
-      const { data: profiles } = authorIds.length
-        ? await supabase.from("profiles").select("id, display_name, programme, study_year, avatar_url, created_at").in("id", authorIds)
-        : { data: [] };
+      const resourceIds = rows.map((resource) => resource.id);
+      const [{ data: profiles }, { data: likes }] = await Promise.all([
+        authorIds.length
+          ? supabase.from("profiles").select("id, display_name, programme, study_year, avatar_url, created_at").in("id", authorIds)
+          : Promise.resolve({ data: [] }),
+        resourceIds.length
+          ? supabase.from("resource_likes").select("resource_id").in("resource_id", resourceIds)
+          : Promise.resolve({ data: [] }),
+      ]);
       const profileRows = (profiles ?? []) as unknown as Profile[];
       const profileById = new Map(profileRows.map((author) => [author.id, author]));
+      const likeCounts = new Map<string, number>();
+      for (const like of (likes ?? []) as Array<{ resource_id: string }>) {
+        likeCounts.set(like.resource_id, (likeCounts.get(like.resource_id) ?? 0) + 1);
+      }
 
-      setResources(rows.map((resource) => ({ ...resource, author: profileById.get(resource.author_id) ?? null })));
+      setResources(rows.map((resource) => ({
+        ...resource,
+        author: profileById.get(resource.author_id) ?? null,
+        like_count: likeCounts.get(resource.id) ?? 0,
+      })));
       setLoading(false);
     }
 
     void loadResources();
     return () => { active = false; };
-  }, [kind, search, year]);
+  }, [debouncedSearch, kind, year]);
 
-  const programmeCount = useMemo(() => new Set(resources.map((resource) => resource.programme)).size, [resources]);
+  const visibleResources = useMemo(() => sortResources(resources, sort), [resources, sort]);
+  const programmeCount = useMemo(() => new Set(visibleResources.map((resource) => resource.programme)).size, [visibleResources]);
   const displayName = profile?.display_name ?? email.split("@")[0] ?? "Étudiant";
 
   return (
@@ -102,15 +125,15 @@ export function Dashboard({ email, profile, userId }: DashboardProps) {
         </section>
 
         <section className="stats-grid" aria-label="Aperçu de la communauté">
-          <div className="stat-card"><span className="stat-value">{resources.length}</span><span className="stat-label">ressources visibles</span></div>
+          <div className="stat-card"><span className="stat-value">{visibleResources.length}</span><span className="stat-label">ressources visibles</span></div>
           <div className="stat-card"><span className="stat-value">{programmeCount}</span><span className="stat-label">formations représentées</span></div>
-          <div className="stat-card"><span className="stat-value">{new Set(resources.map((resource) => resource.subject)).size}</span><span className="stat-label">matières couvertes</span></div>
+          <div className="stat-card"><span className="stat-value">{new Set(visibleResources.map((resource) => resource.subject)).size}</span><span className="stat-label">matières couvertes</span></div>
         </section>
 
         <section id="ressources">
           <div className="section-heading">
             <div>
-              <h2>Les dernières ressources</h2>
+              <h2>{sort === "recent" ? "Les dernières ressources" : "Les plus appréciées"}</h2>
               <p>Les supports déposés par les étudiants de la communauté.</p>
             </div>
             <Link className="button button-secondary button-small" href="/resources/new"><FilePlus2 size={15} /> Déposer un support</Link>
@@ -128,16 +151,20 @@ export function Dashboard({ email, profile, userId }: DashboardProps) {
               <option value="all">Toutes les années</option>
               {STUDY_YEARS.map((studyYear) => <option key={studyYear} value={studyYear}>{studyYear}</option>)}
             </select>
+            <select className="filter-select" value={sort} onChange={(event) => setSort(event.target.value as ResourceSort)} aria-label="Trier les ressources">
+              <option value="recent">Plus récentes</option>
+              <option value="popular">Plus appréciées</option>
+            </select>
           </div>
 
           {loading ? (
             <div className="empty-state"><LoaderCircle className="spin" size={25} /><h3>On ouvre les casiers.</h3><p>Les ressources arrivent.</p></div>
           ) : error ? (
             <div className="empty-state"><BookOpen size={25} /><h3>Le fil est momentanément indisponible.</h3><p>{error}</p><button className="button button-secondary" onClick={() => window.location.reload()} type="button">Réessayer</button></div>
-          ) : resources.length === 0 ? (
+          ) : visibleResources.length === 0 ? (
             <div className="empty-state"><UsersRound size={25} /><h3>À vous d’ouvrir le bal.</h3><p>Aucun support ne correspond à ces filtres. Déposez le premier cours ou la première annale de la promo.</p><Link className="button button-coral" href="/resources/new">Partager une ressource</Link></div>
           ) : (
-            <div className="resource-grid">{resources.map((resource) => <ResourceCard key={resource.id} resource={resource} />)}</div>
+            <div className="resource-grid">{visibleResources.map((resource) => <ResourceCard key={resource.id} resource={resource} />)}</div>
           )}
         </section>
       </main>

@@ -29,6 +29,7 @@ export interface Resource {
 
 export interface ResourceWithAuthor extends Resource {
   author: Profile | null;
+  like_count?: number;
 }
 
 export interface ResourceComment {

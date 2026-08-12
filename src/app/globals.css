@@ -724,7 +724,7 @@ code {
 
 .filters {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) auto auto;
+  grid-template-columns: minmax(220px, 1fr) auto auto auto;
   gap: 10px;
   margin-bottom: 20px;
 }
@@ -815,6 +815,22 @@ code {
   padding-top: 18px;
   color: var(--muted);
   font-size: 0.74rem;
+}
+
+.resource-card-attribution,
+.resource-card-likes {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.resource-card-attribution {
+  gap: 9px;
+}
+
+.resource-card-likes {
+  color: var(--coral);
+  font-weight: 700;
 }
 
 .kind-label {

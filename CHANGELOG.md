@@ -11,6 +11,11 @@
 - callback d’authentification limité aux chemins internes pour éviter les redirections externes ;
 - années d’étude contrôlées côté validation et base de données pour éviter des filtres incohérents.
 
+### Découverte
+
+- tri du fil par ressources récentes ou les plus appréciées ;
+- comptage des likes affiché dans les cartes et recherche temporisée pour éviter une requête à chaque touche.
+
 ## [0.1.0] - 2026-08-11
 
 ### Ajouté
