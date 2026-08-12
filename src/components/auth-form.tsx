@@ -20,11 +20,32 @@ export function AuthForm() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [confirmationEmail, setConfirmationEmail] = useState<string | null>(null);
+  const [resendPending, setResendPending] = useState(false);
+
+  async function resendConfirmationEmail() {
+    if (!confirmationEmail || resendPending) return;
+    setResendPending(true);
+    setError(null);
+    setSuccess(null);
+    const { error: resendError } = await createClient().auth.resend({
+      type: "signup",
+      email: confirmationEmail,
+      options: { emailRedirectTo: `${appConfig.appUrl}/auth/callback` },
+    });
+    if (resendError) {
+      setError("L’e-mail n’a pas pu être renvoyé. Attendez un instant puis réessayez.");
+    } else {
+      setSuccess("Un nouvel e-mail de confirmation vient d’être envoyé.");
+    }
+    setResendPending(false);
+  }
 
   async function handleSubmit(formData: FormData) {
     setPending(true);
     setError(null);
     setSuccess(null);
+    setConfirmationEmail(null);
 
     const email = String(formData.get("email") ?? "").trim().toLowerCase();
     const password = String(formData.get("password") ?? "");
@@ -120,6 +141,7 @@ export function AuthForm() {
     }
 
     setSuccess("Votre compte est créé. Consultez votre boîte mail pour confirmer l’adresse avant de vous connecter.");
+    setConfirmationEmail(email);
     setMode("signin");
     setPending(false);
   }
@@ -139,12 +161,12 @@ export function AuthForm() {
             : "Recevez un lien sécurisé pour choisir un nouveau mot de passe."}
       </p>
 
-      {mode === "reset" ? <button className="text-button auth-back-link" onClick={() => { setMode("signin"); setError(null); setSuccess(null); }} type="button"><ArrowLeft size={14} /> Retour à la connexion</button> : null}
+      {mode === "reset" ? <button className="text-button auth-back-link" onClick={() => { setMode("signin"); setError(null); setSuccess(null); setConfirmationEmail(null); }} type="button"><ArrowLeft size={14} /> Retour à la connexion</button> : null}
 
       {mode !== "reset" ? <div className="auth-tabs" role="tablist" aria-label="Accès au compte">
         <button
           className={`auth-tab ${mode === "signin" ? "auth-tab-active" : ""}`}
-          onClick={() => { setMode("signin"); setError(null); setSuccess(null); }}
+          onClick={() => { setMode("signin"); setError(null); setSuccess(null); setConfirmationEmail(null); }}
           role="tab"
           aria-selected={mode === "signin"}
           type="button"
@@ -153,7 +175,7 @@ export function AuthForm() {
         </button>
         <button
           className={`auth-tab ${mode === "signup" ? "auth-tab-active" : ""}`}
-          onClick={() => { setMode("signup"); setError(null); setSuccess(null); }}
+          onClick={() => { setMode("signup"); setError(null); setSuccess(null); setConfirmationEmail(null); }}
           role="tab"
           aria-selected={mode === "signup"}
           type="button"
@@ -197,11 +219,15 @@ export function AuthForm() {
         {mode !== "reset" ? <div className="field">
           <label htmlFor="password">Mot de passe</label>
           <input id="password" name="password" type="password" placeholder="8 caractères minimum" autoComplete={mode === "signin" ? "current-password" : "new-password"} required />
-          {mode === "signin" ? <button className="text-button auth-reset-link" onClick={() => { setMode("reset"); setError(null); setSuccess(null); }} type="button">Mot de passe oublié ?</button> : null}
+          {mode === "signin" ? <button className="text-button auth-reset-link" onClick={() => { setMode("reset"); setError(null); setSuccess(null); setConfirmationEmail(null); }} type="button">Mot de passe oublié ?</button> : null}
         </div> : null}
 
         {error ? <p className="form-error" role="alert">{error}</p> : null}
         {success ? <p className="form-success" role="status">{success}</p> : null}
+        {confirmationEmail ? <button className="button button-secondary" disabled={resendPending} onClick={() => void resendConfirmationEmail()} type="button">
+          {resendPending ? <LoaderCircle size={17} className="spin" /> : <Mail size={17} />}
+          {resendPending ? "Renvoi…" : "Renvoyer l’e-mail de confirmation"}
+        </button> : null}
 
         <button className="button button-primary" disabled={pending} type="submit">
           {pending ? <LoaderCircle size={17} className="spin" /> : mode === "signin" ? <LogIn size={17} /> : mode === "signup" ? <UserRoundPlus size={17} /> : <Mail size={17} />}
