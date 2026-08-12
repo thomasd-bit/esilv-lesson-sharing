@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resourceSchema, signInSchema, signUpSchema } from "@/lib/validation";
+import { collectionSchema, resourceSchema, signInSchema, signUpSchema } from "@/lib/validation";
 
 describe("validation des comptes", () => {
   it("accepte une inscription complète", () => {
@@ -47,3 +47,17 @@ describe("validation des ressources", () => {
   });
 });
 
+describe("validation des collections", () => {
+  it("accepte une collection personnelle", () => {
+    const result = collectionSchema.safeParse({
+      name: "Révisions de maths",
+      description: "Les supports à revoir avant le prochain contrôle.",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("refuse un nom de collection trop court", () => {
+    const result = collectionSchema.safeParse({ name: "A", description: "" });
+    expect(result.success).toBe(false);
+  });
+});

@@ -42,6 +42,11 @@ export const commentSchema = z.object({
   body: z.string().trim().min(2, "Le commentaire est trop court.").max(1000),
 });
 
+export const collectionSchema = z.object({
+  name: z.string().trim().min(2, "Le nom doit faire au moins 2 caractères.").max(60, "Le nom de la collection est trop long."),
+  description: z.string().trim().max(160, "La description est trop longue."),
+});
+
 export function firstValidationError(error: z.ZodError) {
   return error.issues[0]?.message ?? "Vérifiez les champs du formulaire.";
 }

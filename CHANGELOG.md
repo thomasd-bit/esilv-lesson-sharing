@@ -14,3 +14,11 @@
 - page dédiée aux ressources sauvegardées ;
 - garde-fou SQL sur les domaines e-mail autorisés ;
 - workflow GitHub Actions pour typecheck, lint, tests et build.
+
+## Prochaine version
+
+### Ajouté
+
+- collections personnelles pour organiser les ressources enregistrées ;
+- collection « À lire » créée automatiquement pour chaque étudiant ;
+- politiques RLS dédiées aux collections et à leurs ressources.
