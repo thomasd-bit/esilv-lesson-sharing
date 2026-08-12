@@ -2,6 +2,18 @@ import type { ResourceWithAuthor } from "@/lib/types";
 
 export type ResourceSort = "recent" | "popular";
 
+export const RESOURCE_PAGE_SIZE = 24;
+
+export function getResourcePageRange(offset: number, pageSize = RESOURCE_PAGE_SIZE) {
+  const safeOffset = Math.max(0, Math.floor(offset));
+  const safePageSize = Math.max(1, Math.floor(pageSize));
+  return { from: safeOffset, to: safeOffset + safePageSize - 1 };
+}
+
+export function hasMoreResourcePage(count: number, pageSize = RESOURCE_PAGE_SIZE) {
+  return count >= Math.max(1, Math.floor(pageSize));
+}
+
 export function getProgrammeOptions(resources: Pick<ResourceWithAuthor, "programme">[]) {
   const programmes = new Map<string, string>();
   for (const resource of resources) {

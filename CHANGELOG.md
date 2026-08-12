@@ -1,5 +1,11 @@
 # Journal des changements
 
+## [0.5.5] - 2026-08-12
+
+### Découverte
+
+- chargement progressif du fil par pages de 24 ressources pour que les anciens supports restent retrouvables au-delà des 100 premiers résultats ;
+
 ## [0.5.4] - 2026-08-12
 
 ### Parcours étudiant

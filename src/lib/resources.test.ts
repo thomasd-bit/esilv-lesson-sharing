@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getProgrammeOptions, sortResources } from "@/lib/resources";
+import { getProgrammeOptions, getResourcePageRange, hasMoreResourcePage, RESOURCE_PAGE_SIZE, sortResources } from "@/lib/resources";
 import type { ResourceWithAuthor } from "@/lib/types";
 
 const baseResource = {
@@ -46,5 +46,17 @@ describe("options de formation", () => {
       { ...resource("duplicate", "2026-08-10T10:00:00.000Z", 0), programme: "cycle ingénieur" },
     ]);
     expect(options).toEqual(["Cycle ingénieur", "IIM"]);
+  });
+});
+
+describe("pagination du fil", () => {
+  it("calcule une tranche Supabase sans chevauchement", () => {
+    expect(getResourcePageRange(0)).toEqual({ from: 0, to: RESOURCE_PAGE_SIZE - 1 });
+    expect(getResourcePageRange(24, 24)).toEqual({ from: 24, to: 47 });
+  });
+
+  it("considère une page pleine comme potentiellement suivie d’une autre", () => {
+    expect(hasMoreResourcePage(23, 24)).toBe(false);
+    expect(hasMoreResourcePage(24, 24)).toBe(true);
   });
 });
