@@ -1,5 +1,12 @@
 # Journal des changements
 
+## [0.5.24] - 2026-08-12
+
+### Sécurité et modération
+
+- changements de visibilité d’une ressource bloqués pour les rôles étudiants ;
+- masquage et republication conservés dans le workflow transactionnel et journalisé des mainteneurs ;
+
 ## [0.5.23] - 2026-08-12
 
 ### Découverte
