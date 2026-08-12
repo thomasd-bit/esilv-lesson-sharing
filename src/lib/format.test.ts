@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatDate, initials, notificationMessage, wasEdited } from "@/lib/format";
+import { formatDate, formatMetric, initials, notificationMessage, wasEdited } from "@/lib/format";
 
 describe("formatters d’interface", () => {
   it("produit des initiales lisibles", () => {
@@ -10,6 +10,12 @@ describe("formatters d’interface", () => {
 
   it("formate une date en français", () => {
     expect(formatDate("2026-01-15T12:00:00.000Z")).toMatch(/15/);
+  });
+
+  it("affiche les compteurs agrégés sans confondre une erreur avec zéro", () => {
+    expect(formatMetric(0)).toBe("0");
+    expect(formatMetric(1234)).toMatch(/1.*234/);
+    expect(formatMetric(null)).toBe("—");
   });
 
   it("distingue un commentaire modifié d’un commentaire simplement créé", () => {

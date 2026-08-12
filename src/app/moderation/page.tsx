@@ -3,7 +3,7 @@ import { AlertTriangle, ArrowUpRight, CheckCircle2, CircleDot, ShieldCheck } fro
 import { redirect } from "next/navigation";
 import { AppHeader } from "@/components/app-header";
 import { ModerationResourceAction } from "@/components/moderation-resource-action";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatMetric } from "@/lib/format";
 import { hasModerationConfig, isMaintainerEmail, isReportStatus, REPORT_STATUS_LABELS } from "@/lib/moderation";
 import { createAdminClient, hasServiceRoleConfig } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -16,6 +16,13 @@ type ReportView = ResourceReport & {
   resource: ReportResource | null;
   reporter: Profile | null;
   author: Profile | null;
+};
+
+type UsageStats = {
+  accounts: number | null;
+  publishedResources: number | null;
+  likes: number | null;
+  comments: number | null;
 };
 
 export const dynamic = "force-dynamic";
@@ -49,19 +56,31 @@ export default async function ModerationPage({ searchParams }: { searchParams: P
   }
 
   const adminClient = createAdminClient();
-  const { data: rawReports, error: reportsError } = await adminClient
-    .from("resource_reports")
-    .select("id, resource_id, reporter_id, reason, status, created_at")
-    .order("created_at", { ascending: false })
-    .limit(100);
+  const [reportsResult, accountsResult, resourcesResult, likesResult, commentsResult] = await Promise.all([
+    adminClient
+      .from("resource_reports")
+      .select("id, resource_id, reporter_id, reason, status, created_at")
+      .order("created_at", { ascending: false })
+      .limit(100),
+    adminClient.from("profiles").select("id", { count: "exact", head: true }),
+    adminClient.from("resources").select("id", { count: "exact", head: true }).eq("status", "published"),
+    adminClient.from("resource_likes").select("resource_id", { count: "exact", head: true }),
+    adminClient.from("resource_comments").select("id", { count: "exact", head: true }),
+  ]);
 
-  if (reportsError) {
+  if (reportsResult.error) {
     return <ModerationShell displayName={displayName} email={user.email ?? ""} userId={user.id}>
       <div className="form-error" role="alert">Les signalements ne peuvent pas être chargés pour le moment.</div>
     </ModerationShell>;
   }
 
-  const reports = (rawReports ?? []) as ResourceReport[];
+  const usageStats: UsageStats = {
+    accounts: accountsResult.error ? null : accountsResult.count ?? 0,
+    publishedResources: resourcesResult.error ? null : resourcesResult.count ?? 0,
+    likes: likesResult.error ? null : likesResult.count ?? 0,
+    comments: commentsResult.error ? null : commentsResult.count ?? 0,
+  };
+  const reports = (reportsResult.data ?? []) as ResourceReport[];
   const resourceIds = [...new Set(reports.map((report) => report.resource_id))];
   const reporterIds = [...new Set(reports.map((report) => report.reporter_id))];
   const [{ data: rawResources }, { data: rawProfiles }] = await Promise.all([
@@ -107,6 +126,23 @@ export default async function ModerationPage({ searchParams }: { searchParams: P
       <div className="stat-card"><span className="stat-value">{counts.open}</span><span className="stat-label">à traiter</span></div>
       <div className="stat-card"><span className="stat-value">{counts.reviewed}</span><span className="stat-label">traités</span></div>
       <div className="stat-card"><span className="stat-value">{counts.closed}</span><span className="stat-label">fermés</span></div>
+    </section>
+
+    <section className="moderation-panel moderation-usage-panel" aria-labelledby="moderation-usage-title">
+      <div className="moderation-toolbar">
+        <div>
+          <span className="eyebrow">Adoption observée</span>
+          <h2 id="moderation-usage-title">Les compteurs de Passerelle</h2>
+        </div>
+        <span className="field-hint">Données agrégées</span>
+      </div>
+      <div className="stats-grid moderation-usage-stats">
+        <div className="stat-card"><span className="stat-value">{formatMetric(usageStats.accounts)}</span><span className="stat-label">comptes créés</span></div>
+        <div className="stat-card"><span className="stat-value">{formatMetric(usageStats.publishedResources)}</span><span className="stat-label">ressources publiées</span></div>
+        <div className="stat-card"><span className="stat-value">{formatMetric(usageStats.likes)}</span><span className="stat-label">likes enregistrés</span></div>
+        <div className="stat-card"><span className="stat-value">{formatMetric(usageStats.comments)}</span><span className="stat-label">commentaires écrits</span></div>
+      </div>
+      <p className="moderation-usage-note">Ces compteurs décrivent l’activité cumulée dans Supabase ; ils ne constituent pas une mesure d’utilisateurs actifs.</p>
     </section>
 
     <section className="moderation-panel" aria-labelledby="moderation-list-title">

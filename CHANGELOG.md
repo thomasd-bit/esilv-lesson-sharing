@@ -1,5 +1,11 @@
 # Journal des changements
 
+## [0.5.7] - 2026-08-12
+
+### Mainteneur
+
+- snapshot privé de compteurs agrégés pour suivre les comptes créés, les ressources publiées, les likes et les commentaires sans exposer de données personnelles ;
+
 ## [0.5.6] - 2026-08-12
 
 ### Découverte

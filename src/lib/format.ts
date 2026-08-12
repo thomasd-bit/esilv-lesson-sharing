@@ -8,6 +8,10 @@ export function formatDate(date: string) {
   }).format(new Date(date));
 }
 
+export function formatMetric(value: number | null) {
+  return value === null ? "—" : new Intl.NumberFormat("fr-FR").format(value);
+}
+
 export function initials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   return parts.slice(0, 2).map((part) => part[0]?.toUpperCase()).join("") || "?";
