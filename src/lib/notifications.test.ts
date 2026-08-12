@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { filterNotifications, notificationResourceLabel } from "@/lib/notifications";
+import { filterNotifications, getNotificationPageCount, getNotificationPageRange, getNotificationRange, notificationResourceLabel, NOTIFICATION_PAGE_SIZE } from "@/lib/notifications";
 
 describe("filtre des notifications", () => {
   const notifications = [
@@ -19,5 +19,13 @@ describe("filtre des notifications", () => {
   it("signale quand la ressource d’une notification n’est plus accessible", () => {
     expect(notificationResourceLabel("Fiche de calcul")).toBe("Fiche de calcul");
     expect(notificationResourceLabel(null)).toBe("une ressource devenue indisponible");
+  });
+
+  it("calcule des pages de notifications sans recouvrir la page précédente", () => {
+    expect(getNotificationPageRange(1)).toEqual({ from: 0, to: NOTIFICATION_PAGE_SIZE - 1 });
+    expect(getNotificationPageRange(2, 30)).toEqual({ from: 30, to: 59 });
+    expect(getNotificationRange(31, 30)).toEqual({ from: 31, to: 60 });
+    expect(getNotificationPageCount(0, 30)).toBe(1);
+    expect(getNotificationPageCount(61, 30)).toBe(3);
   });
 });

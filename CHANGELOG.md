@@ -1,5 +1,12 @@
 # Journal des changements
 
+## [0.5.9] - 2026-08-12
+
+### Parcours étudiant
+
+- notifications chargées par pages de 30 éléments pour retrouver les interactions anciennes sans limite silencieuse à 50 entrées ;
+- filtre « Non lues » appliqué côté base et compteurs exacts affichés pour toutes les notifications et les non-lues ;
+
 ## [0.5.8] - 2026-08-12
 
 ### Mainteneur
