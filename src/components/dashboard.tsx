@@ -12,9 +12,10 @@ import { RESOURCE_KINDS, STUDY_YEARS, type Profile, type Resource, type Resource
 type DashboardProps = {
   email: string;
   profile: Profile | null;
+  userId: string;
 };
 
-export function Dashboard({ email, profile }: DashboardProps) {
+export function Dashboard({ email, profile, userId }: DashboardProps) {
   const [resources, setResources] = useState<ResourceWithAuthor[]>([]);
   const [search, setSearch] = useState("");
   const [kind, setKind] = useState<"all" | ResourceKind>("all");
@@ -77,7 +78,7 @@ export function Dashboard({ email, profile }: DashboardProps) {
 
   return (
     <div className="app-page">
-      <AppHeader displayName={displayName} email={email} />
+      <AppHeader displayName={displayName} email={email} userId={userId} />
       <main className="content-wrap">
         <section className="hero-grid">
           <div className="hero-copy">

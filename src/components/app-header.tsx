@@ -2,13 +2,38 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogOut, Plus } from "lucide-react";
+import { Bell, LogOut, Plus } from "lucide-react";
+import { useEffect, useState } from "react";
 import { appConfig } from "@/lib/config";
 import { createClient } from "@/lib/supabase/client";
 import { initials } from "@/lib/format";
 
-export function AppHeader({ displayName, email }: { displayName: string; email: string }) {
+export function AppHeader({ displayName, email, userId }: { displayName: string; email: string; userId: string }) {
   const router = useRouter();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadUnreadCount() {
+      const { count } = await createClient()
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("recipient_id", userId)
+        .is("read_at", null);
+      if (active) setUnreadCount(count ?? 0);
+    }
+
+    void loadUnreadCount();
+    const refreshOnChange = () => void loadUnreadCount();
+    window.addEventListener("passerelle:notifications-changed", refreshOnChange);
+    window.addEventListener("focus", refreshOnChange);
+    return () => {
+      active = false;
+      window.removeEventListener("passerelle:notifications-changed", refreshOnChange);
+      window.removeEventListener("focus", refreshOnChange);
+    };
+  }, [userId]);
 
   async function signOut() {
     await createClient().auth.signOut();
@@ -28,6 +53,11 @@ export function AppHeader({ displayName, email }: { displayName: string; email: 
         <Link href="/profile">Mon profil</Link>
       </nav>
       <div className="header-actions">
+        <Link className="notification-link" href="/notifications" aria-label={unreadCount ? `${unreadCount} notification${unreadCount > 1 ? "s" : ""} non lue${unreadCount > 1 ? "s" : ""}` : "Notifications"}>
+          <Bell size={17} />
+          <span className="notification-text">Notifications</span>
+          {unreadCount > 0 ? <span className="notification-badge">{unreadCount > 99 ? "99+" : unreadCount}</span> : null}
+        </Link>
         <Link className="button button-coral button-small" href="/resources/new">
           <Plus size={16} />
           <span>Partager</span>

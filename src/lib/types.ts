@@ -56,6 +56,19 @@ export interface ResourceCollectionItem {
   created_at: string;
 }
 
+export type NotificationType = "like" | "comment";
+
+export interface AppNotification {
+  id: string;
+  recipient_id: string;
+  actor_id: string;
+  resource_id: string | null;
+  comment_id: string | null;
+  type: NotificationType;
+  created_at: string;
+  read_at: string | null;
+}
+
 export const RESOURCE_KINDS: Array<{ value: ResourceKind; label: string }> = [
   { value: "course", label: "Cours" },
   { value: "exam", label: "Examen / annale" },

@@ -25,5 +25,5 @@ export default async function HomePage() {
     .eq("id", user.id)
     .maybeSingle();
 
-  return <Dashboard email={user.email ?? ""} profile={profile as Profile | null} />;
+  return <Dashboard email={user.email ?? ""} profile={profile as Profile | null} userId={user.id} />;
 }

@@ -15,7 +15,15 @@
 - garde-fou SQL sur les domaines e-mail autorisés ;
 - workflow GitHub Actions pour typecheck, lint, tests et build.
 
-## Prochaine version
+## [0.3.0] - 2026-08-12
+
+### Ajouté
+
+- notifications privées lorsqu’un autre étudiant aime ou commente une ressource partagée ;
+- badge des notifications non lues dans l’en-tête et page dédiée avec marquage individuel ou global ;
+- triggers PostgreSQL et politiques RLS pour garder la création des notifications côté base.
+
+## [0.2.0] - 2026-08-12
 
 ### Ajouté
 
