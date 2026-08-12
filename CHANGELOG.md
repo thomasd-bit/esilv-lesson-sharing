@@ -1,5 +1,11 @@
 # Journal des changements
 
+## [0.5.19] - 2026-08-12
+
+### Découverte
+
+- recherche, type, année, formation et tri conservés dans l’URL pour partager ou retrouver une vue du fil ;
+
 ## [0.5.18] - 2026-08-12
 
 ### Parcours étudiant
