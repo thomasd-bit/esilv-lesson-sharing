@@ -1,5 +1,11 @@
 # Journal des changements
 
+## [0.5.1] - 2026-08-12
+
+### Découverte
+
+- filtre du fil par formation et bouton de réinitialisation pour retrouver rapidement un état de recherche propre ;
+
 ## [0.5.0] - 2026-08-12
 
 ### Mainteneur
@@ -11,7 +17,6 @@
 
 - présentation courte dans le profil et page membre consultable depuis une ressource ;
 - ressources publiées regroupées sur chaque profil pour faciliter la confiance et la découverte entre étudiants ;
-- filtre du fil par formation et bouton de réinitialisation pour retrouver rapidement un état de recherche propre ;
 
 ## [0.4.1] - 2026-08-12
 
