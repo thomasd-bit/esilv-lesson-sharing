@@ -8,16 +8,16 @@ Source : [API publique du dépôt](https://api.github.com/repos/thomasd-bit/esil
 
 | Signal | Valeur observée | Lecture prudente |
 | --- | ---: | --- |
-| Étoiles GitHub | 3 | intérêt public initial, pas une mesure d’usage ; |
+| Étoiles GitHub | 5 | intérêt public initial, pas une mesure d’usage ; |
 | Forks | 0 | aucun fork public observé ; |
-| Issues ouvertes | 0 au moment du snapshot | aucun besoin public en attente ; |
+| Issues ouvertes | 1 (`#2`) | un appel public aux retours est en attente, sans réponse à cette date ; |
 | Contributeurs listés | 1 | le projet n’a pas encore de contribution externe vérifiable ; |
-| Releases publiées | 2 (`v0.1.0`, `v0.4.0`) | deux versions installables et documentées ; |
+| Releases publiées | 4 (`v0.1.0`, `v0.4.0`, `v0.4.1`, `v0.5.0`) | quatre versions publiques et documentées ; |
 | Assets de release téléchargeables | 0 | l’application est publiée comme code source, pas comme binaire ; |
 | Téléchargements de release | non disponible | aucun compteur d’asset à interpréter ; |
 | Dépendants GitHub | non disponible | le dépôt n’est pas une dépendance packagée. |
 
-Le dépôt expose aussi la [PR initiale fusionnée](https://github.com/thomasd-bit/esilv-lesson-sharing/pull/1) et la [release `v0.4.0`](https://github.com/thomasd-bit/esilv-lesson-sharing/releases/tag/v0.4.0). Ces éléments prouvent une activité de maintenance, pas encore une adoption par la promo.
+Le dépôt expose aussi la [PR initiale fusionnée](https://github.com/thomasd-bit/esilv-lesson-sharing/pull/1) et la [release `v0.5.0`](https://github.com/thomasd-bit/esilv-lesson-sharing/releases/tag/v0.5.0). Ces éléments prouvent une activité de maintenance, pas encore une adoption par la promo.
 
 ## Mesures produit à suivre dès qu’un environnement est utilisé
 
