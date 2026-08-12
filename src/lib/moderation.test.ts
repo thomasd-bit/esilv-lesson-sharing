@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getReportPageCount, getReportPageRange, isMaintainerEmail, isReportStatus, isResourceVisibility, parseMaintainerEmails, REPORT_PAGE_SIZE } from "@/lib/moderation";
+import { getReportPageCount, getReportPageRange, isMaintainerEmail, isReportStatus, isResourceVisibility, latestModerationEvents, parseMaintainerEmails, REPORT_PAGE_SIZE, RESOURCE_VISIBILITY_LABELS } from "@/lib/moderation";
 
 describe("accès à la modération", () => {
   it("normalise et dédoublonne la liste des mainteneurs", () => {
@@ -25,6 +25,21 @@ describe("accès à la modération", () => {
     expect(isResourceVisibility("published")).toBe(true);
     expect(isResourceVisibility("hidden")).toBe(true);
     expect(isResourceVisibility("deleted")).toBe(false);
+  });
+
+  it("prépare des libellés compréhensibles pour le journal de visibilité", () => {
+    expect(RESOURCE_VISIBILITY_LABELS.published).toBe("publiée");
+    expect(RESOURCE_VISIBILITY_LABELS.hidden).toBe("masquée");
+  });
+
+  it("retient la dernière action de chaque ressource", () => {
+    const latest = latestModerationEvents([
+      { resource_id: "resource-1", created_at: "2026-08-12T10:00:00.000Z", current_status: "hidden" },
+      { resource_id: "resource-1", created_at: "2026-08-12T12:00:00.000Z", current_status: "published" },
+      { resource_id: "resource-2", created_at: "2026-08-12T11:00:00.000Z", current_status: "hidden" },
+    ]);
+    expect(latest.get("resource-1")?.current_status).toBe("published");
+    expect(latest.get("resource-2")?.current_status).toBe("hidden");
   });
 
   it("calcule des pages de signalements sans reprendre les mêmes éléments", () => {

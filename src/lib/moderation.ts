@@ -10,6 +10,11 @@ export const REPORT_STATUS_LABELS: Record<ResourceReportStatus, string> = {
   closed: "Fermé",
 };
 
+export const RESOURCE_VISIBILITY_LABELS: Record<ResourceVisibility, string> = {
+  published: "publiée",
+  hidden: "masquée",
+};
+
 export function parseMaintainerEmails(raw: string) {
   return [...new Set(raw
     .split(",")
@@ -28,6 +33,15 @@ export function isReportStatus(value: string): value is ResourceReportStatus {
 
 export function isResourceVisibility(value: string): value is ResourceVisibility {
   return value === "published" || value === "hidden";
+}
+
+export function latestModerationEvents<T extends { resource_id: string; created_at: string }>(events: T[]) {
+  const latestByResource = new Map<string, T>();
+  for (const event of events) {
+    const current = latestByResource.get(event.resource_id);
+    if (!current || event.created_at > current.created_at) latestByResource.set(event.resource_id, event);
+  }
+  return latestByResource;
 }
 
 export function getReportPageRange(page: number, pageSize = REPORT_PAGE_SIZE) {

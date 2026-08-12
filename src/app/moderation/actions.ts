@@ -18,6 +18,8 @@ async function requireMaintainer() {
   if (!user || !isMaintainerEmail(user.email, process.env.MAINTAINER_EMAILS ?? "")) {
     redirect("/");
   }
+
+  return user.id;
 }
 
 export async function updateReportStatus(formData: FormData) {
@@ -42,7 +44,7 @@ export async function updateReportStatus(formData: FormData) {
 }
 
 export async function updateResourceVisibility(formData: FormData) {
-  await requireMaintainer();
+  const maintainerId = await requireMaintainer();
   const resourceId = formData.get("resourceId");
   const status = formData.get("status");
 
@@ -51,10 +53,11 @@ export async function updateResourceVisibility(formData: FormData) {
   }
 
   const { data, error } = await createAdminClient()
-    .from("resources")
-    .update({ status })
-    .eq("id", resourceId)
-    .select("id")
+    .rpc("moderate_resource_visibility", {
+      target_resource_id: resourceId,
+      target_status: status,
+      actor_id: maintainerId,
+    })
     .maybeSingle();
 
   if (error || !data) {

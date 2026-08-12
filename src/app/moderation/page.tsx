@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { AppHeader } from "@/components/app-header";
 import { ModerationResourceAction } from "@/components/moderation-resource-action";
 import { formatDate, formatMetric } from "@/lib/format";
-import { getReportPageCount, getReportPageRange, hasModerationConfig, isMaintainerEmail, isReportStatus, REPORT_STATUS_LABELS } from "@/lib/moderation";
+import { getReportPageCount, getReportPageRange, hasModerationConfig, isMaintainerEmail, isReportStatus, latestModerationEvents, REPORT_STATUS_LABELS, RESOURCE_VISIBILITY_LABELS, type ResourceVisibility } from "@/lib/moderation";
 import { createAdminClient, hasServiceRoleConfig } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { Profile, Resource, ResourceReport, ResourceReportStatus } from "@/lib/types";
@@ -12,10 +12,20 @@ import { updateReportStatus } from "@/app/moderation/actions";
 
 type StatusFilter = "all" | ResourceReportStatus;
 type ReportResource = Pick<Resource, "id" | "title" | "status" | "author_id" | "created_at">;
+type ModerationEvent = {
+  id: string;
+  resource_id: string;
+  maintainer_id: string | null;
+  previous_status: ResourceVisibility;
+  current_status: ResourceVisibility;
+  created_at: string;
+};
+type ModerationEventView = ModerationEvent & { maintainer: Profile | null };
 type ReportView = ResourceReport & {
   resource: ReportResource | null;
   reporter: Profile | null;
   author: Profile | null;
+  lastModerationEvent: ModerationEventView | null;
 };
 
 type UsageStats = {
@@ -105,16 +115,26 @@ export default async function ModerationPage({ searchParams }: { searchParams: P
   const reports = (reportsResult.data ?? []) as ResourceReport[];
   const resourceIds = [...new Set(reports.map((report) => report.resource_id))];
   const reporterIds = [...new Set(reports.map((report) => report.reporter_id))];
-  const [{ data: rawResources }, { data: rawProfiles }] = await Promise.all([
+  const [{ data: rawResources }, { data: rawProfiles }, { data: rawEvents }] = await Promise.all([
     resourceIds.length
       ? adminClient.from("resources").select("id, title, status, author_id, created_at").in("id", resourceIds)
       : Promise.resolve({ data: [] }),
     reporterIds.length
       ? adminClient.from("profiles").select("id, display_name, programme, study_year, bio, avatar_url, created_at").in("id", reporterIds)
       : Promise.resolve({ data: [] }),
+    resourceIds.length
+      ? adminClient.from("resource_moderation_events").select("id, resource_id, maintainer_id, previous_status, current_status, created_at").in("resource_id", resourceIds).order("created_at", { ascending: false })
+      : Promise.resolve({ data: [] }),
   ]);
   const resourcesById = new Map(((rawResources ?? []) as ReportResource[]).map((resource) => [resource.id, resource]));
   const profilesById = new Map(((rawProfiles ?? []) as unknown as Profile[]).map((profileRow) => [profileRow.id, profileRow]));
+  const moderationEvents = (rawEvents ?? []) as ModerationEvent[];
+  const moderationActorIds = [...new Set(moderationEvents.flatMap((event) => event.maintainer_id ? [event.maintainer_id] : []))];
+  const { data: rawModerators } = moderationActorIds.length
+    ? await adminClient.from("profiles").select("id, display_name, programme, study_year, bio, avatar_url, created_at").in("id", moderationActorIds)
+    : { data: [] };
+  const moderatorsById = new Map(((rawModerators ?? []) as unknown as Profile[]).map((moderator) => [moderator.id, moderator]));
+  const latestModerationByResource = new Map([...latestModerationEvents(moderationEvents)].map(([resourceId, event]) => [resourceId, { ...event, maintainer: event.maintainer_id ? moderatorsById.get(event.maintainer_id) ?? null : null }]));
   const authorIds = [...new Set((rawResources ?? []).map((resource) => (resource as ReportResource).author_id))];
   const { data: rawAuthors } = authorIds.length
     ? await adminClient.from("profiles").select("id, display_name, programme, study_year, bio, avatar_url, created_at").in("id", authorIds)
@@ -127,6 +147,7 @@ export default async function ModerationPage({ searchParams }: { searchParams: P
       resource,
       reporter: profilesById.get(report.reporter_id) ?? null,
       author: resource ? authorsById.get(resource.author_id) ?? null : null,
+      lastModerationEvent: latestModerationByResource.get(report.resource_id) ?? null,
     };
   });
 
@@ -213,6 +234,7 @@ function ReportCard({ report }: { report: ReportView }) {
     <h3>{resourceLabel}</h3>
     <p className="moderation-reason">{report.reason}</p>
     <p className="moderation-meta">Signalé par <strong>{reporterName}</strong> · auteur : <strong>{authorName}</strong></p>
+    {report.lastModerationEvent ? <p className="moderation-meta">Dernière visibilité : <strong>{RESOURCE_VISIBILITY_LABELS[report.lastModerationEvent.current_status]}</strong> le {formatDate(report.lastModerationEvent.created_at)} · par <strong>{report.lastModerationEvent.maintainer?.display_name ?? "un mainteneur"}</strong></p> : null}
     <div className="moderation-actions">
       {report.resource ? <ModerationResourceAction
         resourceId={report.resource.id}
