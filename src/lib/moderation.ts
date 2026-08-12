@@ -1,5 +1,7 @@
 import type { ResourceReportStatus } from "@/lib/types";
 
+export type ResourceVisibility = "published" | "hidden";
+
 export const REPORT_STATUS_LABELS: Record<ResourceReportStatus, string> = {
   open: "À traiter",
   reviewed: "Traité",
@@ -20,6 +22,10 @@ export function isMaintainerEmail(email: string | null | undefined, configuredEm
 
 export function isReportStatus(value: string): value is ResourceReportStatus {
   return value === "open" || value === "reviewed" || value === "closed";
+}
+
+export function isResourceVisibility(value: string): value is ResourceVisibility {
+  return value === "published" || value === "hidden";
 }
 
 export function hasModerationConfig() {

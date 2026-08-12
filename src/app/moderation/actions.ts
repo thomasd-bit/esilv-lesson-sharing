@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient, hasServiceRoleConfig } from "@/lib/supabase/admin";
-import { isMaintainerEmail, isReportStatus } from "@/lib/moderation";
+import { isMaintainerEmail, isReportStatus, isResourceVisibility } from "@/lib/moderation";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -39,4 +39,29 @@ export async function updateReportStatus(formData: FormData) {
   }
 
   revalidatePath("/moderation");
+}
+
+export async function updateResourceVisibility(formData: FormData) {
+  await requireMaintainer();
+  const resourceId = formData.get("resourceId");
+  const status = formData.get("status");
+
+  if (typeof resourceId !== "string" || !uuidPattern.test(resourceId) || typeof status !== "string" || !isResourceVisibility(status)) {
+    return;
+  }
+
+  const { data, error } = await createAdminClient()
+    .from("resources")
+    .update({ status })
+    .eq("id", resourceId)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !data) {
+    throw new Error("La ressource n’a pas pu être mise à jour.");
+  }
+
+  revalidatePath("/moderation");
+  revalidatePath("/");
+  revalidatePath(`/resources/${resourceId}`);
 }

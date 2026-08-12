@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isMaintainerEmail, isReportStatus, parseMaintainerEmails } from "@/lib/moderation";
+import { isMaintainerEmail, isReportStatus, isResourceVisibility, parseMaintainerEmails } from "@/lib/moderation";
 
 describe("accès à la modération", () => {
   it("normalise et dédoublonne la liste des mainteneurs", () => {
@@ -19,5 +19,11 @@ describe("accès à la modération", () => {
     expect(isReportStatus("open")).toBe(true);
     expect(isReportStatus("reviewed")).toBe(true);
     expect(isReportStatus("archived")).toBe(false);
+  });
+
+  it("n’accepte que les états de visibilité d’une ressource connus", () => {
+    expect(isResourceVisibility("published")).toBe(true);
+    expect(isResourceVisibility("hidden")).toBe(true);
+    expect(isResourceVisibility("deleted")).toBe(false);
   });
 });

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AlertTriangle, ArrowUpRight, CheckCircle2, CircleDot, ShieldCheck } from "lucide-react";
 import { redirect } from "next/navigation";
 import { AppHeader } from "@/components/app-header";
+import { ModerationResourceAction } from "@/components/moderation-resource-action";
 import { formatDate } from "@/lib/format";
 import { hasModerationConfig, isMaintainerEmail, isReportStatus, REPORT_STATUS_LABELS } from "@/lib/moderation";
 import { createAdminClient, hasServiceRoleConfig } from "@/lib/supabase/admin";
@@ -164,6 +165,11 @@ function ReportCard({ report }: { report: ReportView }) {
     <p className="moderation-reason">{report.reason}</p>
     <p className="moderation-meta">Signalé par <strong>{reporterName}</strong> · auteur : <strong>{authorName}</strong></p>
     <div className="moderation-actions">
+      {report.resource ? <ModerationResourceAction
+        resourceId={report.resource.id}
+        status={report.resource.status === "published" ? "hidden" : "published"}
+        title={resourceLabel}
+      /> : null}
       {report.status === "open" ? <StatusAction reportId={report.id} status="reviewed">Marquer traité</StatusAction> : null}
       {report.status !== "closed" ? <StatusAction reportId={report.id} status="closed">Fermer</StatusAction> : null}
       {report.status !== "open" ? <StatusAction reportId={report.id} status="open">Rouvrir</StatusAction> : null}
