@@ -1,5 +1,12 @@
 # Journal des changements
 
+## [0.5.11] - 2026-08-12
+
+### Parcours étudiant
+
+- sauvegardes chargées par lots de 24 pour éviter une requête qui grossit sans limite ;
+- compteurs « Toutes » et par collection calculés séparément, y compris lorsque certaines ressources sauvegardées ne sont plus accessibles ;
+
 ## [0.5.10] - 2026-08-12
 
 ### Parcours étudiant
