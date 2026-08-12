@@ -1402,6 +1402,36 @@ code {
   white-space: pre-wrap;
 }
 
+.comment-actions {
+  display: flex;
+  gap: 12px;
+  margin: 9px 0 0 41px;
+}
+
+.comment-actions .text-button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.comment-delete-button {
+  color: var(--coral-dark);
+}
+
+.comment-edit-form {
+  display: grid;
+  gap: 9px;
+  margin: 12px 0 0 41px;
+}
+
+.comment-edit-form textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 11px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  resize: vertical;
+}
+
 .side-card h2 {
   margin: 0 0 15px;
   font-family: Georgia, "Times New Roman", serif;

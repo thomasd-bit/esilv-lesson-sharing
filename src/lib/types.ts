@@ -38,6 +38,7 @@ export interface ResourceComment {
   author_id: string;
   body: string;
   created_at: string;
+  updated_at: string;
   author: Profile | null;
 }
 

@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { Bookmark, Check, ExternalLink, FileDown, Flag, Heart, LoaderCircle, MessageCircle, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { formatDate, initials } from "@/lib/format";
+import { formatDate, initials, wasEdited } from "@/lib/format";
 import { commentSchema, firstValidationError } from "@/lib/validation";
 import { RESOURCE_KIND_LABELS, type Profile, type Resource, type ResourceComment } from "@/lib/types";
 
@@ -23,8 +23,11 @@ export function ResourceDetail({ resource, author, currentUserId }: Props) {
   const [comments, setComments] = useState<ResourceComment[]>([]);
   const [commentBody, setCommentBody] = useState("");
   const [commentError, setCommentError] = useState<string | null>(null);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editingBody, setEditingBody] = useState("");
+  const [editCommentError, setEditCommentError] = useState<string | null>(null);
   const [socialLoading, setSocialLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState<"like" | "save" | "comment" | "file" | "delete" | null>(null);
+  const [actionLoading, setActionLoading] = useState<"like" | "save" | "comment" | "file" | "delete" | "edit-comment" | "delete-comment" | null>(null);
   const [reporting, setReporting] = useState(false);
   const [reportReason, setReportReason] = useState("");
   const [reportMessage, setReportMessage] = useState<string | null>(null);
@@ -37,7 +40,7 @@ export function ResourceDetail({ resource, author, currentUserId }: Props) {
         supabase.from("resource_likes").select("resource_id", { count: "exact", head: true }).eq("resource_id", resource.id),
         supabase.from("resource_likes").select("resource_id").eq("resource_id", resource.id).eq("user_id", currentUserId).maybeSingle(),
         supabase.from("resource_saves").select("resource_id").eq("resource_id", resource.id).eq("user_id", currentUserId).maybeSingle(),
-        supabase.from("resource_comments").select("id, resource_id, author_id, body, created_at").eq("resource_id", resource.id).order("created_at", { ascending: true }),
+        supabase.from("resource_comments").select("id, resource_id, author_id, body, created_at, updated_at").eq("resource_id", resource.id).order("created_at", { ascending: true }),
       ]);
       const commentRows = (rawComments ?? []) as Array<Omit<ResourceComment, "author">>;
       const authorIds = [...new Set(commentRows.map((comment) => comment.author_id))];
@@ -98,7 +101,7 @@ export function ResourceDetail({ resource, author, currentUserId }: Props) {
     setActionLoading("comment");
     setCommentError(null);
     const supabase = createClient();
-    const { data, error } = await supabase.from("resource_comments").insert({ resource_id: resource.id, author_id: currentUserId, body: commentBody.trim() }).select("id, resource_id, author_id, body, created_at").single();
+    const { data, error } = await supabase.from("resource_comments").insert({ resource_id: resource.id, author_id: currentUserId, body: commentBody.trim() }).select("id, resource_id, author_id, body, created_at, updated_at").single();
     if (error || !data) {
       setCommentError("Le commentaire n’a pas pu être publié.");
       setActionLoading(null);
@@ -106,6 +109,62 @@ export function ResourceDetail({ resource, author, currentUserId }: Props) {
     }
     setComments((current) => [...current, { ...(data as Omit<ResourceComment, "author">), author: authorForCurrentUser(currentUserId) }]);
     setCommentBody("");
+    setActionLoading(null);
+  }
+
+  function startEditingComment(comment: ResourceComment) {
+    setEditingCommentId(comment.id);
+    setEditingBody(comment.body);
+    setEditCommentError(null);
+  }
+
+  function cancelEditingComment() {
+    setEditingCommentId(null);
+    setEditingBody("");
+    setEditCommentError(null);
+  }
+
+  async function saveCommentEdit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!editingCommentId) return;
+    const parsed = commentSchema.safeParse({ body: editingBody });
+    if (!parsed.success) { setEditCommentError(firstValidationError(parsed.error)); return; }
+    setActionLoading("edit-comment");
+    setEditCommentError(null);
+    const { data, error } = await createClient()
+      .from("resource_comments")
+      .update({ body: parsed.data.body })
+      .eq("id", editingCommentId)
+      .eq("author_id", currentUserId)
+      .select("id, resource_id, author_id, body, created_at, updated_at")
+      .single();
+    if (error || !data) {
+      setEditCommentError("Le commentaire n’a pas pu être modifié.");
+      setActionLoading(null);
+      return;
+    }
+    setComments((current) => current.map((comment) => comment.id === editingCommentId
+      ? { ...(data as Omit<ResourceComment, "author">), author: comment.author }
+      : comment));
+    cancelEditingComment();
+    setActionLoading(null);
+  }
+
+  async function deleteComment(comment: ResourceComment) {
+    if (!window.confirm("Supprimer ce commentaire ? Cette action est définitive.")) return;
+    setActionLoading("delete-comment");
+    const { error } = await createClient()
+      .from("resource_comments")
+      .delete()
+      .eq("id", comment.id)
+      .eq("author_id", currentUserId);
+    if (error) {
+      setCommentError("Le commentaire n’a pas pu être supprimé.");
+      setActionLoading(null);
+      return;
+    }
+    setComments((current) => current.filter((item) => item.id !== comment.id));
+    if (editingCommentId === comment.id) cancelEditingComment();
     setActionLoading(null);
   }
 
@@ -176,7 +235,20 @@ export function ResourceDetail({ resource, author, currentUserId }: Props) {
               <button className="button button-secondary button-small" disabled={actionLoading === "comment"} type="submit">{actionLoading === "comment" ? <LoaderCircle className="spin" size={15} /> : <Check size={15} />} Publier</button>
             </div>
           </form>
-          {socialLoading ? <div className="field-hint"><LoaderCircle className="spin" size={15} /> Chargement des retours…</div> : comments.length === 0 ? <p className="field-hint">Pas encore de retour. Le premier commentaire peut faire gagner du temps à toute une promo.</p> : comments.map((comment) => <Comment key={comment.id} comment={comment} />)}
+          {socialLoading ? <div className="field-hint"><LoaderCircle className="spin" size={15} /> Chargement des retours…</div> : comments.length === 0 ? <p className="field-hint">Pas encore de retour. Le premier commentaire peut faire gagner du temps à toute une promo.</p> : comments.map((comment) => <Comment
+            key={comment.id}
+            comment={comment}
+            isOwner={comment.author_id === currentUserId}
+            isEditing={editingCommentId === comment.id}
+            editingBody={editingBody}
+            editError={editingCommentId === comment.id ? editCommentError : null}
+            busy={actionLoading === "edit-comment" || actionLoading === "delete-comment"}
+            onStartEditing={() => startEditingComment(comment)}
+            onCancelEditing={cancelEditingComment}
+            onEditingBodyChange={setEditingBody}
+            onSaveEdit={(event) => void saveCommentEdit(event)}
+            onDelete={() => void deleteComment(comment)}
+          />)}
         </section>
       </article>
 
@@ -197,12 +269,40 @@ export function ResourceDetail({ resource, author, currentUserId }: Props) {
   );
 }
 
-function Comment({ comment }: { comment: ResourceComment }) {
+type CommentProps = {
+  comment: ResourceComment;
+  isOwner: boolean;
+  isEditing: boolean;
+  editingBody: string;
+  editError: string | null;
+  busy: boolean;
+  onStartEditing: () => void;
+  onCancelEditing: () => void;
+  onEditingBodyChange: (value: string) => void;
+  onSaveEdit: (event: React.FormEvent<HTMLFormElement>) => void;
+  onDelete: () => void;
+};
+
+function Comment({ comment, isOwner, isEditing, editingBody, editError, busy, onStartEditing, onCancelEditing, onEditingBodyChange, onSaveEdit, onDelete }: CommentProps) {
   const name = comment.author?.display_name ?? "Étudiant";
   return (
     <article className="comment">
-      <div className="comment-top"><span className="avatar">{initials(name)}</span><strong>{name}</strong><time dateTime={comment.created_at}>{formatDate(comment.created_at)}</time></div>
-      <p>{comment.body}</p>
+      <div className="comment-top"><span className="avatar">{initials(name)}</span><strong>{name}</strong><time dateTime={comment.updated_at}>{formatDate(comment.created_at)}{wasEdited(comment.created_at, comment.updated_at) ? " · modifié" : ""}</time></div>
+      {isEditing ? (
+        <form className="comment-edit-form" onSubmit={onSaveEdit}>
+          <textarea value={editingBody} onChange={(event) => onEditingBodyChange(event.target.value)} aria-label="Modifier votre commentaire" autoFocus />
+          <div className="inline-actions">
+            {editError ? <span className="field-error" role="alert">{editError}</span> : null}
+            <button className="button button-quiet button-small" onClick={onCancelEditing} type="button">Annuler</button>
+            <button className="button button-secondary button-small" disabled={busy} type="submit">{busy ? <LoaderCircle className="spin" size={15} /> : <Check size={15} />} Enregistrer</button>
+          </div>
+        </form>
+      ) : (
+        <>
+          <p>{comment.body}</p>
+          {isOwner ? <div className="comment-actions"><button className="text-button" onClick={onStartEditing} disabled={busy} type="button">Modifier</button><button className="text-button comment-delete-button" onClick={onDelete} disabled={busy} type="button">Supprimer</button></div> : null}
+        </>
+      )}
     </article>
   );
 }
