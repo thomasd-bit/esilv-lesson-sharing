@@ -1,5 +1,11 @@
 # Journal des changements
 
+## [0.5.17] - 2026-08-12
+
+### Parcours étudiant
+
+- messages explicites lorsque l’appréciation, la sauvegarde, le téléchargement ou la suppression d’une ressource échoue ;
+
 ## [0.5.16] - 2026-08-12
 
 ### Parcours étudiant
