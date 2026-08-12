@@ -1,5 +1,12 @@
 # Journal des changements
 
+## [0.5.26] - 2026-08-12
+
+### Intégrité des métriques
+
+- les étudiants ne peuvent plus falsifier les compteurs de likes ou de téléchargements via une requête directe sur leurs ressources ;
+- l’insertion et la mise à jour SQL sont limitées aux colonnes réellement éditables dans l’interface.
+
 ## [0.5.25] - 2026-08-12
 
 ### Recherche
