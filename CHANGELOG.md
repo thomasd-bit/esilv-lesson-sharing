@@ -1,5 +1,12 @@
 # Journal des changements
 
+## [0.5.20] - 2026-08-12
+
+### Parcours étudiant
+
+- gestion des collections personnelles : renommage, suppression confirmée et maintien des compteurs après modification ;
+- collection automatique « À lire » protégée par une politique RLS dédiée ;
+
 ## [0.5.19] - 2026-08-12
 
 ### Découverte
