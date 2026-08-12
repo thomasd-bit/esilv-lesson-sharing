@@ -1,5 +1,11 @@
 # Journal des changements
 
+## [0.5.13] - 2026-08-12
+
+### Parcours étudiant
+
+- remplacement du fichier d’une ressource directement depuis sa page d’édition, sans perdre les likes, sauvegardes ou retours associés ;
+
 ## [0.5.12] - 2026-08-12
 
 ### Parcours étudiant
