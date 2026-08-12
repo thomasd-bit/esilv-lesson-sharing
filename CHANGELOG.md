@@ -1,5 +1,11 @@
 # Journal des changements
 
+## [0.5.15] - 2026-08-12
+
+### Mainteneur
+
+- journal privé et transactionnel des masquages et republications, avec dernière action visible dans la file de modération ;
+
 ## [0.5.14] - 2026-08-12
 
 ### Parcours étudiant
