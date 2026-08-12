@@ -12,6 +12,7 @@
 - navigation mobile conservée sur deux lignes, avec accès aux ressources enregistrées et au profil sans débordement de l’en-tête ;
 - filtre « Toutes / Non lues » dans la page notifications pour retrouver rapidement les retours à traiter ;
 - snapshot d’adoption documenté avec définitions de métriques et formulaire public de feedback étudiant ;
+- appel public aux retours étudiants ouvert sur GitHub, sans fabriquer de témoignages ni de métriques d’usage ;
 
 ### Sécurité
 

@@ -38,3 +38,7 @@ Le premier test utile consiste à faire essayer Passerelle à quelques étudiant
 3. Quelle information manquait dans la fiche ou le profil ?
 
 Chaque retour exploitable doit rester identifiable par un lien d’issue ou une note datée. Aucun retour utilisateur n’est déclaré ici tant qu’il n’a pas été réellement reçu.
+
+## Sollicitation en cours
+
+Le [premier appel public aux retours](https://github.com/thomasd-bit/esilv-lesson-sharing/issues/2) a été ouvert le 12 août 2026. Il demande explicitement des expériences réelles et rappelle de ne publier aucune donnée personnelle. Les métriques de ce document ne seront révisées qu’après réception de réponses vérifiables.
