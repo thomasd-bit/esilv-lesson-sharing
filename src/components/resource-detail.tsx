@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Bookmark, Check, ExternalLink, FileDown, Flag, Heart, LoaderCircle, MessageCircle, Trash2 } from "lucide-react";
+import { Bookmark, Check, ExternalLink, FileDown, Flag, Heart, LoaderCircle, MessageCircle, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { formatDate, initials, wasEdited } from "@/lib/format";
@@ -215,7 +215,7 @@ export function ResourceDetail({ resource, author, currentUserId }: Props) {
           <button className={`action-button ${liked ? "action-button-active" : ""}`} onClick={() => void toggleLike()} disabled={actionLoading === "like"} type="button"><Heart size={15} fill={liked ? "currentColor" : "none"} /> {likeCount}</button>
           <button className={`action-button ${saved ? "action-button-active" : ""}`} onClick={() => void toggleSave()} disabled={actionLoading === "save"} type="button"><Bookmark size={15} fill={saved ? "currentColor" : "none"} /> {saved ? "Enregistré" : "Garder"}</button>
           <button className="action-button" onClick={() => setReporting((value) => !value)} type="button"><Flag size={15} /> Signaler</button>
-          {resource.author_id === currentUserId ? <button className="action-button" onClick={() => void deleteResource()} disabled={actionLoading === "delete"} type="button"><Trash2 size={15} /> Supprimer</button> : null}
+          {resource.author_id === currentUserId ? <><Link className="action-button" href={`/resources/${resource.id}/edit`}><Pencil size={15} /> Modifier</Link><button className="action-button" onClick={() => void deleteResource()} disabled={actionLoading === "delete"} type="button"><Trash2 size={15} /> Supprimer</button></> : null}
         </div>
         {reporting ? (
           <form className="comment-form" onSubmit={(event) => void submitReport(event)} style={{ marginTop: "18px" }}>

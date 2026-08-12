@@ -1432,6 +1432,13 @@ code {
   resize: vertical;
 }
 
+.resource-edit-file-note {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--blue-pale);
+}
+
 .side-card h2 {
   margin: 0 0 15px;
   font-family: Georgia, "Times New Roman", serif;

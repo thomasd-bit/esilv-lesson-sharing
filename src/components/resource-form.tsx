@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileUp, LoaderCircle, Send } from "lucide-react";
+import { FileUp, LoaderCircle, Save, Send } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { resourceFileError, RESOURCE_FILE_ACCEPT } from "@/lib/files";
 import { firstValidationError, resourceSchema } from "@/lib/validation";
-import { RESOURCE_KINDS, STUDY_YEARS } from "@/lib/types";
+import { RESOURCE_KINDS, STUDY_YEARS, type Resource } from "@/lib/types";
 
 function safeFileName(name: string) {
   return name
@@ -17,7 +17,14 @@ function safeFileName(name: string) {
     .slice(0, 120);
 }
 
-export function ResourceForm({ initialProgramme, initialStudyYear }: { initialProgramme: string; initialStudyYear: string }) {
+type ResourceFormProps = {
+  initialProgramme: string;
+  initialStudyYear: string;
+  resource?: Resource;
+};
+
+export function ResourceForm({ initialProgramme, initialStudyYear, resource }: ResourceFormProps) {
+  const editing = Boolean(resource);
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +54,7 @@ export function ResourceForm({ initialProgramme, initialStudyYear }: { initialPr
       setPending(false);
       return;
     }
-    if (!file && !values.linkUrl.trim()) {
+    if (!file && !values.linkUrl.trim() && !resource?.file_path) {
       setError("Ajoutez un lien ou un fichier pour que la ressource soit consultable.");
       setPending(false);
       return;
@@ -68,8 +75,8 @@ export function ResourceForm({ initialProgramme, initialStudyYear }: { initialPr
       return;
     }
 
-    let uploadedPath: string | null = null;
-    if (file) {
+    let uploadedPath: string | null = resource?.file_path ?? null;
+    if (!editing && file) {
       uploadedPath = `${user.id}/${crypto.randomUUID()}-${safeFileName(file.name)}`;
       const { error: uploadError } = await supabase.storage
         .from("resource-files")
@@ -81,9 +88,7 @@ export function ResourceForm({ initialProgramme, initialStudyYear }: { initialPr
       }
     }
 
-    const { data, error: insertError } = await supabase
-      .from("resources")
-      .insert({
+    const resourceValues = {
         title: values.title.trim(),
         description: values.description.trim(),
         kind: values.kind,
@@ -92,16 +97,17 @@ export function ResourceForm({ initialProgramme, initialStudyYear }: { initialPr
         study_year: values.studyYear,
         link_url: values.linkUrl.trim() || null,
         file_path: uploadedPath,
-        author_id: user.id,
-      })
-      .select("id")
-      .single();
+      };
+    const query = editing
+      ? supabase.from("resources").update(resourceValues).eq("id", resource?.id).eq("author_id", user.id)
+      : supabase.from("resources").insert({ ...resourceValues, author_id: user.id });
+    const { data, error: saveError } = await query.select("id").single();
 
-    if (insertError || !data) {
-      if (uploadedPath) {
+    if (saveError || !data) {
+      if (!editing && uploadedPath) {
         await supabase.storage.from("resource-files").remove([uploadedPath]);
       }
-      setError("La ressource n’a pas pu être publiée. Vérifiez les informations puis réessayez.");
+      setError(editing ? "La ressource n’a pas pu être modifiée. Vérifiez les informations puis réessayez." : "La ressource n’a pas pu être publiée. Vérifiez les informations puis réessayez.");
       setPending(false);
       return;
     }
@@ -115,53 +121,53 @@ export function ResourceForm({ initialProgramme, initialStudyYear }: { initialPr
       <div className="form-grid">
         <div className="field field-full">
           <label htmlFor="title">Titre du support</label>
-          <input id="title" name="title" placeholder="Ex. Fiche de révision — probabilités" required maxLength={120} />
+          <input id="title" name="title" defaultValue={resource?.title} placeholder="Ex. Fiche de révision — probabilités" required maxLength={120} />
         </div>
         <div className="field">
           <label htmlFor="kind">Type</label>
-          <select id="kind" name="kind" defaultValue="course" required>
+          <select id="kind" name="kind" defaultValue={resource?.kind ?? "course"} required>
             {RESOURCE_KINDS.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
           </select>
         </div>
         <div className="field">
           <label htmlFor="subject">Matière</label>
-          <input id="subject" name="subject" placeholder="Probabilités, Python…" required maxLength={80} />
+          <input id="subject" name="subject" defaultValue={resource?.subject} placeholder="Probabilités, Python…" required maxLength={80} />
         </div>
         <div className="field">
           <label htmlFor="programme">Formation</label>
-          <input id="programme" name="programme" defaultValue={initialProgramme} placeholder="Cycle ingénieur…" required maxLength={80} />
+          <input id="programme" name="programme" defaultValue={resource?.programme ?? initialProgramme} placeholder="Cycle ingénieur…" required maxLength={80} />
         </div>
         <div className="field">
           <label htmlFor="studyYear">Année concernée</label>
-          <select id="studyYear" name="studyYear" defaultValue={initialStudyYear} required>
+          <select id="studyYear" name="studyYear" defaultValue={resource?.study_year ?? initialStudyYear} required>
             <option value="" disabled>Choisir</option>
             {STUDY_YEARS.map((year) => <option key={year} value={year}>{year}</option>)}
           </select>
         </div>
         <div className="field field-full">
           <label htmlFor="description">Pourquoi ce support vaut le détour ?</label>
-          <textarea id="description" name="description" placeholder="Expliquez ce qu’on y trouve, pour quel cours il sert et à quel moment il vous a aidé…" required maxLength={2000} />
+          <textarea id="description" name="description" defaultValue={resource?.description} placeholder="Expliquez ce qu’on y trouve, pour quel cours il sert et à quel moment il vous a aidé…" required maxLength={2000} />
           <span className="field-hint">20 caractères minimum. Ce texte aide les autres étudiants à choisir rapidement.</span>
         </div>
         <div className="field field-full">
           <label htmlFor="linkUrl">Lien externe (facultatif si vous envoyez un fichier)</label>
-          <input id="linkUrl" name="linkUrl" type="url" placeholder="https://…" inputMode="url" />
+          <input id="linkUrl" name="linkUrl" type="url" defaultValue={resource?.link_url ?? ""} placeholder="https://…" inputMode="url" />
         </div>
-        <div className="field field-full">
+        {!editing ? <div className="field field-full">
           <label htmlFor="file">Fichier (facultatif si vous ajoutez un lien)</label>
           <div className="file-drop">
             <FileUp size={22} aria-hidden="true" />
             <span>{selectedFile ?? "PDF, image, document ou archive — 10 Mo maximum"}</span>
             <input id="file" name="file" type="file" accept={RESOURCE_FILE_ACCEPT} onChange={(event) => setSelectedFile(event.target.files?.[0]?.name ?? null)} />
           </div>
-        </div>
+        </div> : <p className="field-hint field-full resource-edit-file-note">Le fichier déjà partagé est conservé. Pour le remplacer, supprimez cette ressource puis publiez la nouvelle version.</p>}
       </div>
 
       {error ? <p className="form-error" role="alert">{error}</p> : null}
       <div className="inline-actions" style={{ justifyContent: "flex-end", marginTop: "4px" }}>
         <button className="button button-primary" disabled={pending} type="submit">
-          {pending ? <LoaderCircle size={17} className="spin" /> : <Send size={17} />}
-          {pending ? "Publication…" : "Publier la ressource"}
+          {pending ? <LoaderCircle size={17} className="spin" /> : editing ? <Save size={17} /> : <Send size={17} />}
+          {pending ? (editing ? "Enregistrement…" : "Publication…") : editing ? "Enregistrer les changements" : "Publier la ressource"}
         </button>
       </div>
     </form>
