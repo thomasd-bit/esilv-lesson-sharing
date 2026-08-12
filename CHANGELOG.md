@@ -9,6 +9,7 @@
 - édition des métadonnées d’une ressource par son auteur, en conservant le fichier, les likes, les sauvegardes et les commentaires ;
 - validation cohérente des fichiers partagés (taille maximale et formats autorisés) avant l’envoi ;
 - navigation clavier améliorée avec lien de saut, focus visible et respect des préférences de mouvement réduit ;
+- navigation mobile conservée sur deux lignes, avec accès aux ressources enregistrées et au profil sans débordement de l’en-tête ;
 
 ### Sécurité
 

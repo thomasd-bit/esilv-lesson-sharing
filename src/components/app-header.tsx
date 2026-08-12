@@ -58,7 +58,7 @@ export function AppHeader({ displayName, email, userId }: { displayName: string;
           <span className="notification-text">Notifications</span>
           {unreadCount > 0 ? <span className="notification-badge">{unreadCount > 99 ? "99+" : unreadCount}</span> : null}
         </Link>
-        <Link className="button button-coral button-small" href="/resources/new">
+        <Link className="button button-coral button-small" href="/resources/new" aria-label="Partager une ressource">
           <Plus size={16} />
           <span>Partager</span>
         </Link>
