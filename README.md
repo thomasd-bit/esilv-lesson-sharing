@@ -39,12 +39,12 @@ NEXT_PUBLIC_ALLOWED_EMAIL_DOMAINS=devinci.fr,edu.devinci.fr,ext.devinci.fr,esilv
 ## Préparer Supabase
 
 1. Créez un projet Supabase.
-2. Dans l’éditeur SQL, exécutez les migrations dans l’ordre : `20260811000000_initial_schema.sql`, `20260811010000_school_email_guard.sql`, `20260812000000_collections.sql`, puis `20260812010000_notifications.sql`.
+2. Dans l’éditeur SQL, exécutez les migrations dans l’ordre : `20260811000000_initial_schema.sql`, `20260811010000_school_email_guard.sql`, `20260812000000_collections.sql`, `20260812010000_notifications.sql`, puis `20260812020000_study_year_integrity.sql`.
 3. Dans Authentication → URL Configuration, ajoutez `http://localhost:3000/auth/callback` aux Redirect URLs.
 4. Dans Authentication → Providers → Email, choisissez si les nouveaux comptes doivent confirmer leur adresse. En production, gardez la confirmation activée. Ajoutez aussi l’URL de callback de récupération si votre configuration Supabase utilise une liste stricte de Redirect URLs.
 5. Copiez l’URL du projet et sa publishable key dans `.env.local`.
 
-Les migrations créent les tables de profils, ressources, likes, sauvegardes, commentaires, signalements, collections privées et notifications, ainsi qu’une liste de domaines autorisés pour l’inscription. Chaque étudiant reçoit automatiquement une collection « À lire ». Un like ou un commentaire crée une notification côté base pour l’auteur de la ressource, sans notification pour ses propres actions. Elles activent RLS sur chaque table et créent le bucket privé `resource-files`. La clé secrète Supabase ne doit jamais être mise dans le navigateur ni dans Git.
+Les migrations créent les tables de profils, ressources, likes, sauvegardes, commentaires, signalements, collections privées et notifications, ainsi qu’une liste de domaines autorisés pour l’inscription. Chaque étudiant reçoit automatiquement une collection « À lire ». Un like ou un commentaire crée une notification côté base pour l’auteur de la ressource, sans notification pour ses propres actions. Les années d’étude acceptées sont `1A`, `2A`, `3A`, `4A`, `5A` et `Autre`; la contrainte SQL est ajoutée `not valid` pour ne pas bloquer une base qui contiendrait déjà une ancienne valeur à nettoyer. Elles activent RLS sur chaque table et créent le bucket privé `resource-files`. La clé secrète Supabase ne doit jamais être mise dans le navigateur ni dans Git.
 
 ## Vérifier le projet
 

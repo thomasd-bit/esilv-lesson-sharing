@@ -8,7 +8,8 @@
 
 ### Sécurité
 
-- callback d’authentification limité aux chemins internes pour éviter les redirections externes.
+- callback d’authentification limité aux chemins internes pour éviter les redirections externes ;
+- années d’étude contrôlées côté validation et base de données pour éviter des filtres incohérents.
 
 ## [0.1.0] - 2026-08-11
 

@@ -22,6 +22,17 @@ describe("validation des comptes", () => {
     const result = passwordResetSchema.safeParse({ password: "motdepasse-solide", confirmPassword: "autre-mot-de-passe" });
     expect(result.success).toBe(false);
   });
+
+  it("refuse une année qui n’existe pas dans le référentiel", () => {
+    const result = signUpSchema.safeParse({
+      displayName: "Camille Martin",
+      programme: "Cycle ingénieur",
+      studyYear: "semestre 7",
+      email: "camille@ecole.fr",
+      password: "motdepasse-solide",
+    });
+    expect(result.success).toBe(false);
+  });
 });
 
 describe("validation des ressources", () => {

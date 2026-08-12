@@ -1,5 +1,11 @@
 import { z } from "zod";
 
+const studyYearValues = ["1A", "2A", "3A", "4A", "5A", "Autre"] as const;
+
+export const studyYearSchema = z.enum(studyYearValues, {
+  error: "Choisissez une année proposée.",
+});
+
 export const signInSchema = z.object({
   email: z.string().trim().email("Entrez une adresse e-mail valide."),
   password: z.string().min(8, "Le mot de passe doit faire au moins 8 caractères."),
@@ -26,7 +32,7 @@ export const signUpSchema = signInSchema.extend({
     .trim()
     .min(2, "Indiquez votre formation.")
     .max(80, "La formation est trop longue."),
-  studyYear: z.string().trim().min(1, "Choisissez votre année."),
+  studyYear: studyYearSchema,
 });
 
 export const resourceSchema = z.object({
@@ -39,7 +45,7 @@ export const resourceSchema = z.object({
   kind: z.enum(["course", "exam", "project", "summary", "other"]),
   subject: z.string().trim().min(2, "Indiquez la matière.").max(80),
   programme: z.string().trim().min(2, "Indiquez la formation.").max(80),
-  studyYear: z.string().trim().min(1, "Choisissez l’année concernée."),
+  studyYear: studyYearSchema,
   linkUrl: z
     .string()
     .trim()
