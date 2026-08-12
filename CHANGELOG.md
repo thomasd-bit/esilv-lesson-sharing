@@ -1,5 +1,11 @@
 # Journal des changements
 
+## [0.5.10] - 2026-08-12
+
+### Parcours étudiant
+
+- profils membres chargés par lots de 24 partages avec un compteur serveur exact, afin que les anciennes ressources restent accessibles au-delà des 100 premiers éléments ;
+
 ## [0.5.9] - 2026-08-12
 
 ### Parcours étudiant

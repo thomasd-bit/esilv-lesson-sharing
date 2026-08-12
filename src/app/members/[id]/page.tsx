@@ -2,12 +2,13 @@ import Link from "next/link";
 import { ArrowLeft, BookOpen, UserRound } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 import { AppHeader } from "@/components/app-header";
-import { ResourceCard } from "@/components/resource-card";
+import { MemberResources } from "@/components/member-resources";
 import { formatDate, initials } from "@/lib/format";
 import { isMaintainerEmail } from "@/lib/moderation";
 import { hasSupabaseConfig } from "@/lib/config";
 import { createClient } from "@/lib/supabase/server";
-import type { Profile, Resource, ResourceWithAuthor } from "@/lib/types";
+import { getResourcePageRange, hasMoreResourcePage } from "@/lib/resources";
+import type { Profile, Resource } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -24,18 +25,19 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
   ]);
   if (!rawMember) notFound();
 
-  const { data: rawResources } = await supabase
+  const resourceRange = getResourcePageRange(0);
+  const { data: rawResources, count: resourceCount } = await supabase
     .from("resources")
-    .select("id, title, description, kind, subject, programme, study_year, link_url, file_path, author_id, status, like_count, created_at, updated_at")
+    .select("id, title, description, kind, subject, programme, study_year, link_url, file_path, author_id, status, like_count, created_at, updated_at", { count: "exact" })
     .eq("author_id", id)
     .eq("status", "published")
     .order("created_at", { ascending: false })
-    .limit(100);
+    .range(resourceRange.from, resourceRange.to);
 
   const member = rawMember as Profile;
   const viewerProfile = rawViewerProfile as Profile | null;
   const resources = (rawResources ?? []) as Resource[];
-  const resourceCards: ResourceWithAuthor[] = resources.map((resource) => ({ ...resource, author: member }));
+  const initialHasMore = resourceCount === null ? hasMoreResourcePage(resources.length) : resources.length < resourceCount;
   const viewerName = viewerProfile?.display_name ?? user.email?.split("@")[0] ?? "Étudiant";
 
   return (
@@ -65,9 +67,7 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
               <p>Les supports que {member.display_name} a choisi de transmettre à la communauté.</p>
             </div>
           </div>
-          {resourceCards.length === 0 ? (
-            <div className="empty-state"><BookOpen size={25} /><h3>Pas encore de ressource publique.</h3><p>Les prochains partages de ce membre apparaîtront ici.</p></div>
-          ) : <div className="resource-grid">{resourceCards.map((resource) => <ResourceCard key={resource.id} resource={resource} />)}</div>}
+          <MemberResources member={member} initialResources={resources} initialHasMore={initialHasMore} />
         </section>
       </main>
     </div>
