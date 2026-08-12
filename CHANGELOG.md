@@ -1,5 +1,11 @@
 # Journal des changements
 
+## [0.5.2] - 2026-08-12
+
+### Sécurité
+
+- lecture des fichiers Storage limitée aux ressources publiées et à leur auteur, y compris lorsque le chemin d’un objet est connu ;
+
 ## [0.5.1] - 2026-08-12
 
 ### Découverte

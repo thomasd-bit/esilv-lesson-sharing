@@ -43,14 +43,14 @@ MAINTAINER_EMAILS=maintainer@ecole.fr
 ## Préparer Supabase
 
 1. Créez un projet Supabase.
-2. Dans l’éditeur SQL, exécutez les migrations dans l’ordre : `20260811000000_initial_schema.sql`, `20260811010000_school_email_guard.sql`, `20260812000000_collections.sql`, `20260812010000_notifications.sql`, `20260812020000_study_year_integrity.sql`, `20260812030000_report_deduplication.sql`, puis `20260812040000_profile_bio.sql`.
+2. Dans l’éditeur SQL, exécutez les migrations dans l’ordre : `20260811000000_initial_schema.sql`, `20260811010000_school_email_guard.sql`, `20260812000000_collections.sql`, `20260812010000_notifications.sql`, `20260812020000_study_year_integrity.sql`, `20260812030000_report_deduplication.sql`, `20260812040000_profile_bio.sql`, puis `20260812050000_restrict_resource_file_reads.sql`.
 3. Dans Authentication → URL Configuration, ajoutez `http://localhost:3000/auth/callback` aux Redirect URLs.
 4. Dans Authentication → Providers → Email, choisissez si les nouveaux comptes doivent confirmer leur adresse. En production, gardez la confirmation activée. Ajoutez aussi l’URL de callback de récupération si votre configuration Supabase utilise une liste stricte de Redirect URLs.
 5. Copiez l’URL du projet et sa publishable key dans `.env.local`.
 
 Les migrations créent les tables de profils, ressources, likes, sauvegardes, commentaires, signalements, collections privées et notifications, ainsi qu’une liste de domaines autorisés pour l’inscription. Chaque étudiant reçoit automatiquement une collection « À lire ». Un like ou un commentaire crée une notification côté base pour l’auteur de la ressource, sans notification pour ses propres actions. Les années d’étude acceptées sont `1A`, `2A`, `3A`, `4A`, `5A` et `Autre`; la contrainte SQL est ajoutée `not valid` pour ne pas bloquer une base qui contiendrait déjà une ancienne valeur à nettoyer. Un même étudiant ne peut garder qu’un signalement ouvert par ressource. La page privée `/moderation` permet aux adresses de `MAINTAINER_EMAILS` de traiter ou fermer ces signalements. Elles activent RLS sur chaque table et créent le bucket privé `resource-files`. La clé secrète Supabase ne doit jamais être mise dans le navigateur ni dans Git.
 
-Dans Storage, gardez `resource-files` privé et configurez une limite de 10 Mo ainsi que les types MIME correspondant aux PDF, images PNG/JPEG/WebP, documents Word, présentations PowerPoint, tableurs Excel et archives ZIP. L’interface applique la même règle avant l’envoi, mais la restriction du bucket Supabase doit rester le contrôle effectif pour les requêtes qui contournent le navigateur.
+Dans Storage, gardez `resource-files` privé et configurez une limite de 10 Mo ainsi que les types MIME correspondant aux PDF, images PNG/JPEG/WebP, documents Word, présentations PowerPoint, tableurs Excel et archives ZIP. L’interface applique la même règle avant l’envoi, mais la restriction du bucket Supabase doit rester le contrôle effectif pour les requêtes qui contournent le navigateur. La dernière migration limite aussi la lecture d’un objet à une ressource publiée ou à son auteur ; un fichier lié à une ressource masquée n’est donc pas exposé aux autres étudiants.
 
 ## Vérifier le projet
 
