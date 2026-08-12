@@ -1,5 +1,12 @@
 # Journal des changements
 
+## [0.5.27] - 2026-08-12
+
+### Accès école
+
+- le domaine e-mail autorisé est désormais contrôlé aussi lors d’une modification d’adresse ;
+- le périmètre des comptes étudiants reste cohérent après une mise à jour du compte Supabase.
+
 ## [0.5.26] - 2026-08-12
 
 ### Intégrité des métriques
