@@ -1,5 +1,12 @@
 # Journal des changements
 
+## [0.5.3] - 2026-08-12
+
+### Mainteneur
+
+- masquage et republication réversibles des ressources directement depuis la file de modération ;
+- confirmation avant de masquer une ressource et revalidation des vues concernées après chaque action ;
+
 ## [0.5.2] - 2026-08-12
 
 ### Sécurité
