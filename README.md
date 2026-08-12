@@ -82,3 +82,5 @@ Le snapshot public et les définitions des indicateurs sont maintenus dans [docs
 ## Contribuer
 
 Consultez [CONTRIBUTING.md](CONTRIBUTING.md) avant d’ouvrir une issue ou une pull request. Les retours de vrais étudiants sont particulièrement utiles pour choisir les filtres, les formations et les règles de modération.
+
+La CI se lance sur les pushes, les pull requests vers `main` ou `codex/**`, et peut aussi être démarrée manuellement depuis l’onglet Actions de GitHub.

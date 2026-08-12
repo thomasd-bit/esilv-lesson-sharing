@@ -1,10 +1,11 @@
 name: CI
 
 on:
+  workflow_dispatch:
   push:
     branches: [main, "codex/**"]
   pull_request:
-    branches: [main]
+    branches: [main, "codex/**"]
 
 permissions:
   contents: read
@@ -37,4 +38,3 @@ jobs:
 
       - name: Production build
         run: npm run build
-
