@@ -28,7 +28,7 @@ function describeSavedSearch(savedSearch: SavedResourceSearch) {
     savedSearch.kind === "all" ? null : RESOURCE_KIND_LABELS[savedSearch.kind],
     savedSearch.study_year === "all" ? null : savedSearch.study_year,
     savedSearch.programme === "all" ? null : savedSearch.programme,
-    savedSearch.sort === "popular" ? "Plus appréciées" : "Plus récentes",
+    savedSearch.sort === "popular" ? "Plus appréciées" : savedSearch.sort === "downloaded" ? "Plus téléchargées" : "Plus récentes",
   ].filter(Boolean);
 
   return parts.join(" · ") || "Tous les supports";
@@ -310,7 +310,7 @@ export function Dashboard({ email, profile, userId, isMaintainer, initialFilters
         <section id="ressources">
           <div className="section-heading">
             <div>
-              <h2>{sort === "recent" ? "Les dernières ressources" : "Les plus appréciées"}</h2>
+          <h2>{sort === "recent" ? "Les dernières ressources" : sort === "popular" ? "Les plus appréciées" : "Les plus téléchargées"}</h2>
               <p>Les supports déposés par les étudiants de la communauté.</p>
             </div>
             <Link className="button button-secondary button-small" href="/resources/new"><FilePlus2 size={15} /> Déposer un support</Link>
@@ -335,6 +335,7 @@ export function Dashboard({ email, profile, userId, isMaintainer, initialFilters
             <select className="filter-select" value={sort} onChange={(event) => setSort(event.target.value as ResourceSort)} aria-label="Trier les ressources">
               <option value="recent">Plus récentes</option>
               <option value="popular">Plus appréciées</option>
+              <option value="downloaded">Plus téléchargées</option>
             </select>
             {hasActiveFilters ? <button className="filter-reset" onClick={() => { setSearch(""); setKind("all"); setYear("all"); setProgramme("all"); setSort("recent"); }} type="button">Réinitialiser</button> : null}
           </div>

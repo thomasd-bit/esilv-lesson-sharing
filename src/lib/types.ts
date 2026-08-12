@@ -79,7 +79,7 @@ export interface SavedResourceSearch {
   kind: "all" | ResourceKind;
   study_year: "all" | StudyYear;
   programme: string;
-  sort: "recent" | "popular";
+  sort: "recent" | "popular" | "downloaded";
   created_at: string;
   updated_at: string;
 }

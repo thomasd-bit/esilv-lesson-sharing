@@ -1,6 +1,6 @@
 import { RESOURCE_KINDS, STUDY_YEARS, type ResourceKind, type ResourceWithAuthor, type StudyYear } from "@/lib/types";
 
-export type ResourceSort = "recent" | "popular";
+export type ResourceSort = "recent" | "popular" | "downloaded";
 export type ResourceAction = "like" | "save" | "file" | "delete";
 export type ResourceFilterState = {
   search: string;
@@ -10,7 +10,7 @@ export type ResourceFilterState = {
   sort: ResourceSort;
 };
 
-export type ResourceOrder = { column: "created_at" | "like_count"; ascending: false };
+export type ResourceOrder = { column: "created_at" | "like_count" | "download_count"; ascending: false };
 
 export const RESOURCE_PAGE_SIZE = 24;
 
@@ -36,7 +36,7 @@ export function parseResourceFilters(params: URLSearchParams): ResourceFilterSta
     kind: RESOURCE_KINDS.some(({ value }) => value === requestedKind) ? requestedKind as ResourceKind : "all",
     year: STUDY_YEARS.includes(requestedYear as StudyYear) ? requestedYear as StudyYear : "all",
     programme: programme || "all",
-    sort: requestedSort === "popular" ? "popular" : "recent",
+    sort: requestedSort === "popular" || requestedSort === "downloaded" ? requestedSort : "recent",
   };
 }
 
@@ -75,9 +75,9 @@ export function hasMoreResourcePage(count: number, pageSize = RESOURCE_PAGE_SIZE
 }
 
 export function getResourceOrder(sort: ResourceSort): ResourceOrder[] {
-  return sort === "popular"
-    ? [{ column: "like_count", ascending: false }, { column: "created_at", ascending: false }]
-    : [{ column: "created_at", ascending: false }];
+  if (sort === "popular") return [{ column: "like_count", ascending: false }, { column: "created_at", ascending: false }];
+  if (sort === "downloaded") return [{ column: "download_count", ascending: false }, { column: "created_at", ascending: false }];
+  return [{ column: "created_at", ascending: false }];
 }
 
 export function getProgrammeOptions(resources: Pick<ResourceWithAuthor, "programme">[]) {
@@ -96,6 +96,10 @@ export function sortResources(resources: ResourceWithAuthor[], sort: ResourceSor
     if (sort === "popular") {
       const popularityDifference = (right.like_count ?? 0) - (left.like_count ?? 0);
       if (popularityDifference !== 0) return popularityDifference;
+    }
+    if (sort === "downloaded") {
+      const downloadDifference = Number(right.download_count ?? 0) - Number(left.download_count ?? 0);
+      if (downloadDifference !== 0) return downloadDifference;
     }
 
     return new Date(right.created_at).getTime() - new Date(left.created_at).getTime();

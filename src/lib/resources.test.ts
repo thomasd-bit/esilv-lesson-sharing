@@ -37,6 +37,14 @@ describe("tri du fil de ressources", () => {
     ], "popular");
     expect(sorted.map((item) => item.id)).toEqual(["new", "old"]);
   });
+
+  it("met les supports les plus téléchargés en premier", () => {
+    const sorted = sortResources([
+      { ...resource("rare", "2026-08-12T10:00:00.000Z", 0), download_count: 1 },
+      { ...resource("useful", "2026-08-10T10:00:00.000Z", 0), download_count: 7 },
+    ], "downloaded");
+    expect(sorted.map((item) => item.id)).toEqual(["useful", "rare"]);
+  });
 });
 
 describe("options de formation", () => {
@@ -70,6 +78,13 @@ describe("ordre demandé au fil", () => {
     ]);
     expect(getResourceOrder("recent")).toEqual([{ column: "created_at", ascending: false }]);
   });
+
+  it("ordonne par téléchargements avant d’appliquer la pagination", () => {
+    expect(getResourceOrder("downloaded")).toEqual([
+      { column: "download_count", ascending: false },
+      { column: "created_at", ascending: false },
+    ]);
+  });
 });
 
 describe("retours d’action sur une ressource", () => {
@@ -98,10 +113,12 @@ describe("filtres partageables du fil", () => {
 
     expect(filters).toEqual({ search: "probabilités", kind: "exam", year: "3A", programme: "Cycle ingénieur", sort: "popular" });
     expect(parseResourceFilters(new URLSearchParams("kind=unknown&year=9A&sort=old"))).toEqual({ search: "", kind: "all", year: "all", programme: "all", sort: "recent" });
+    expect(parseResourceFilters(new URLSearchParams("sort=downloaded")).sort).toBe("downloaded");
   });
 
   it("ne met dans l’URL que les filtres actifs", () => {
     expect(buildResourceFilterQuery({ search: " maths ", kind: "all", year: "all", programme: "all", sort: "recent" })).toBe("q=maths");
     expect(buildResourceFilterQuery({ search: "", kind: "summary", year: "2A", programme: "IIM", sort: "popular" })).toBe("kind=summary&year=2A&programme=IIM&sort=popular");
+    expect(buildResourceFilterQuery({ search: "", kind: "all", year: "all", programme: "all", sort: "downloaded" })).toBe("sort=downloaded");
   });
 });

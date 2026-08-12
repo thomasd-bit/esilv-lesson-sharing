@@ -1,5 +1,12 @@
 # Journal des changements
 
+## [0.5.23] - 2026-08-12
+
+### Découverte
+
+- tri du fil par téléchargements, avec état partageable dans l’URL et conservé dans les recherches enregistrées ;
+- les supports les plus consultés deviennent retrouvables sans modifier le tri récent par défaut ;
+
 ## [0.5.22] - 2026-08-12
 
 ### Mainteneur
