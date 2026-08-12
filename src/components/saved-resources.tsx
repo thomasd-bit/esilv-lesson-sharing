@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { Bookmark, Layers, LoaderCircle, Plus } from "lucide-react";
+import { Bookmark, Layers, LoaderCircle, Pencil, Plus, Save, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CollectionPicker } from "@/components/collection-picker";
 import { ResourceCard } from "@/components/resource-card";
 import { formatMetric } from "@/lib/format";
+import { canManageCollection } from "@/lib/collections";
 import { getResourcePageRange, hasMoreResourcePage, RESOURCE_PAGE_SIZE } from "@/lib/resources";
 import { createClient } from "@/lib/supabase/client";
 import { collectionSchema, firstValidationError } from "@/lib/validation";
@@ -117,9 +118,14 @@ export function SavedResources({ userId }: { userId: string }) {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState("");
   const [newCollectionDescription, setNewCollectionDescription] = useState("");
+  const [editingCollectionId, setEditingCollectionId] = useState<string | null>(null);
+  const [editingCollectionName, setEditingCollectionName] = useState("");
+  const [editingCollectionDescription, setEditingCollectionDescription] = useState("");
   const [collectionError, setCollectionError] = useState<string | null>(null);
   const [collectionsUnavailable, setCollectionsUnavailable] = useState<string | null>(null);
   const [collectionSaving, setCollectionSaving] = useState(false);
+  const [collectionUpdating, setCollectionUpdating] = useState(false);
+  const [collectionDeletingId, setCollectionDeletingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -231,6 +237,80 @@ export function SavedResources({ userId }: { userId: string }) {
     setCollectionSaving(false);
   }
 
+  function startEditingCollection(collection: ResourceCollection) {
+    setShowCreateForm(false);
+    setEditingCollectionId(collection.id);
+    setEditingCollectionName(collection.name);
+    setEditingCollectionDescription(collection.description);
+    setCollectionError(null);
+  }
+
+  function cancelEditingCollection() {
+    setEditingCollectionId(null);
+    setEditingCollectionName("");
+    setEditingCollectionDescription("");
+    setCollectionError(null);
+  }
+
+  async function updateCollection(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!editingCollectionId) return;
+    const parsed = collectionSchema.safeParse({ name: editingCollectionName, description: editingCollectionDescription });
+    if (!parsed.success) {
+      setCollectionError(firstValidationError(parsed.error));
+      return;
+    }
+    setCollectionUpdating(true);
+    setCollectionError(null);
+    try {
+      const { data, error: updateError } = await createClient()
+        .from("resource_collections")
+        .update({ name: parsed.data.name, description: parsed.data.description })
+        .eq("id", editingCollectionId)
+        .eq("owner_id", userId)
+        .select("id, owner_id, name, description, is_default, created_at, updated_at")
+        .single();
+      if (updateError || !data) {
+        setCollectionError(updateError?.code === "23505" ? "Vous avez déjà une collection avec ce nom." : "La collection n’a pas pu être modifiée.");
+        return;
+      }
+      const updatedCollection = data as unknown as ResourceCollection;
+      setCollections((current) => current.map((collection) => collection.id === updatedCollection.id ? updatedCollection : collection));
+      cancelEditingCollection();
+    } finally {
+      setCollectionUpdating(false);
+    }
+  }
+
+  async function deleteCollection(collection: ResourceCollection) {
+    if (collection.is_default || collectionDeletingId) return;
+    if (!window.confirm(`Supprimer la collection « ${collection.name} » ? Les ressources resteront sauvegardées, mais ne seront plus classées ici.`)) return;
+    setCollectionDeletingId(collection.id);
+    setCollectionError(null);
+    try {
+      const { error: deleteError } = await createClient()
+        .from("resource_collections")
+        .delete()
+        .eq("id", collection.id)
+        .eq("owner_id", userId);
+      if (deleteError) {
+        setCollectionError("La collection n’a pas pu être supprimée.");
+        return;
+      }
+      setCollections((current) => current.filter((item) => item.id !== collection.id));
+      setCollectionCounts((current) => {
+        const next = { ...current };
+        delete next[collection.id];
+        return next;
+      });
+      setMembership((current) => Object.fromEntries(Object.entries(current).map(([resourceId, collectionIds]) => [resourceId, collectionIds.filter((id) => id !== collection.id)])));
+      if (selectedCollectionId === collection.id) setSelectedCollectionId("all");
+      if (editingCollectionId === collection.id) cancelEditingCollection();
+    } finally {
+      setCollectionDeletingId(null);
+    }
+  }
+
   function updateMembership(resourceId: string, collectionId: string, added: boolean) {
     setMembership((current) => {
       const currentIds = new Set(current[resourceId] ?? []);
@@ -257,12 +337,24 @@ export function SavedResources({ userId }: { userId: string }) {
             <h2 id="collections-title">Mes collections</h2>
             <p>Classez les supports enregistrés selon votre prochaine révision, votre projet ou vos envies.</p>
           </div>
-          <button className="button button-secondary button-small" onClick={() => { setShowCreateForm((value) => !value); setCollectionError(null); }} type="button"><Plus size={15} /> Nouvelle collection</button>
+          <button className="button button-secondary button-small" onClick={() => { setShowCreateForm((value) => !value); cancelEditingCollection(); setCollectionError(null); }} type="button"><Plus size={15} /> Nouvelle collection</button>
         </div>
 
         {collectionsUnavailable ? <p className="form-error" role="alert">{collectionsUnavailable}</p> : null}
 
-        {showCreateForm ? (
+        {editingCollectionId ? (
+          <form className="collection-form" onSubmit={(event) => void updateCollection(event)}>
+            <div className="form-grid">
+              <label className="field" htmlFor="editingCollectionName"><span>Nom</span><input id="editingCollectionName" maxLength={60} value={editingCollectionName} onChange={(event) => setEditingCollectionName(event.target.value)} /></label>
+              <label className="field" htmlFor="editingCollectionDescription"><span>Description <em>(facultatif)</em></span><input id="editingCollectionDescription" maxLength={160} value={editingCollectionDescription} onChange={(event) => setEditingCollectionDescription(event.target.value)} /></label>
+            </div>
+            <div className="inline-actions collection-form-actions">
+              {collectionError ? <span className="field-error" role="alert">{collectionError}</span> : null}
+              <button className="button button-quiet button-small" onClick={cancelEditingCollection} type="button"><X size={15} /> Annuler</button>
+              <button className="button button-primary button-small" disabled={collectionUpdating} type="submit">{collectionUpdating ? <LoaderCircle className="spin" size={15} /> : <Save size={15} />} {collectionUpdating ? "Enregistrement…" : "Enregistrer"}</button>
+            </div>
+          </form>
+        ) : showCreateForm ? (
           <form className="collection-form" onSubmit={(event) => void createCollection(event)}>
             <div className="form-grid">
               <label className="field"><span>Nom</span><input autoFocus maxLength={60} value={newCollectionName} onChange={(event) => setNewCollectionName(event.target.value)} placeholder="Ex. Révisions de maths" /></label>
@@ -279,6 +371,19 @@ export function SavedResources({ userId }: { userId: string }) {
           <button className={`collection-tab ${selectedCollectionId === "all" ? "collection-tab-active" : ""}`} onClick={() => setSelectedCollectionId("all")} role="tab" aria-selected={selectedCollectionId === "all"} type="button"><span>Toutes</span><strong>{formatMetric(totalSavedCount)}</strong></button>
           {collections.map((collection) => <button className={`collection-tab ${selectedCollectionId === collection.id ? "collection-tab-active" : ""}`} key={collection.id} onClick={() => setSelectedCollectionId(collection.id)} role="tab" aria-selected={selectedCollectionId === collection.id} type="button"><span>{collection.name}</span><strong>{formatMetric(collectionCounts[collection.id] ?? null)}</strong></button>)}
         </div>
+        {collections.some((collection) => !collection.is_default) ? (
+          <div className="collection-management" aria-label="Gérer mes collections">
+            {collections.filter(canManageCollection).map((collection) => (
+              <div className={`collection-management-item ${editingCollectionId === collection.id ? "collection-management-item-active" : ""}`} key={collection.id}>
+                <div><strong>{collection.name}</strong><small>{formatMetric(collectionCounts[collection.id] ?? null)} support{collectionCounts[collection.id] === 1 ? "" : "s"}</small></div>
+                <div className="collection-management-actions">
+                  <button className="text-button" aria-label={`Modifier ${collection.name}`} disabled={Boolean(collectionDeletingId) || collectionUpdating} onClick={() => startEditingCollection(collection)} type="button"><Pencil size={14} /> Modifier</button>
+                  <button className="text-button comment-delete-button" aria-label={`Supprimer ${collection.name}`} disabled={Boolean(collectionDeletingId) || collectionUpdating} onClick={() => void deleteCollection(collection)} type="button">{collectionDeletingId === collection.id ? <LoaderCircle className="spin" size={14} /> : <Trash2 size={14} />} Supprimer</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
       </section>
 
       {error ? <p className="form-error" role="alert">{error}</p> : null}

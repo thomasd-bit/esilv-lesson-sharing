@@ -1488,6 +1488,51 @@ code {
   background: var(--blue-pale);
 }
 
+.collection-management {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.collection-management-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.collection-management-item-active {
+  border-color: #b8d2d8;
+  background: var(--blue-pale);
+}
+
+.collection-management-item > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.collection-management-item small {
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
+.collection-management-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.collection-management-actions .text-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .collection-form {
   margin-top: 20px;
   padding: 17px;
@@ -1929,6 +1974,15 @@ code {
   .collection-form-actions {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .collection-management-item {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .collection-management-actions {
+    justify-content: flex-start;
   }
 
   .collection-form-actions .field-error {
