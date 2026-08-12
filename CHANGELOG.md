@@ -1,5 +1,11 @@
 # Journal des changements
 
+## [0.5.12] - 2026-08-12
+
+### Parcours étudiant
+
+- retours d’une fiche ressource chargés par pages de 30 avec compteur exact, pour conserver une discussion utilisable lorsqu’elle grandit ;
+
 ## [0.5.11] - 2026-08-12
 
 ### Parcours étudiant
