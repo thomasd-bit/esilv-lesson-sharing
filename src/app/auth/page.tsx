@@ -4,7 +4,7 @@ import { BookOpenCheck, CircleCheck, UsersRound } from "lucide-react";
 
 export default function AuthPage() {
   return (
-    <main className="auth-page">
+    <main id="main-content" className="auth-page">
       <section className="auth-copy">
         <div>
           <div className="brand-lockup">
@@ -30,4 +30,3 @@ export default function AuthPage() {
     </main>
   );
 }
-

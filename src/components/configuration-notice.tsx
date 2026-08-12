@@ -2,7 +2,7 @@ import { Settings2 } from "lucide-react";
 
 export function ConfigurationNotice() {
   return (
-    <main className="page-center page-padding">
+    <main id="main-content" className="page-center page-padding">
       <section className="message-card message-card-wide">
         <div className="icon-badge icon-badge-blue" aria-hidden="true">
           <Settings2 size={22} />
@@ -21,4 +21,3 @@ export function ConfigurationNotice() {
     </main>
   );
 }
-

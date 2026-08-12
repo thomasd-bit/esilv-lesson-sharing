@@ -21,7 +21,7 @@ export default async function ProfilePage() {
         <Link className="button button-quiet button-small" href="/"><ArrowLeft size={16} /> Retour aux ressources</Link>
         <span className="eyebrow">Mon profil</span>
       </header>
-      <main className="content-wrap">
+      <main id="main-content" className="content-wrap">
         <div className="page-header">
           <div>
             <span className="eyebrow">Votre carte dans la communauté</span>
@@ -37,4 +37,3 @@ export default async function ProfilePage() {
     </div>
   );
 }
-

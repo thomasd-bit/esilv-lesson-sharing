@@ -19,7 +19,7 @@ export default async function ResetPasswordPage() {
         <Link className="button button-quiet button-small" href="/auth"><ArrowLeft size={16} /> Retour à la connexion</Link>
         <span className="eyebrow">{appConfig.name}</span>
       </header>
-      <main className="content-wrap password-reset-page">
+      <main id="main-content" className="content-wrap password-reset-page">
         <div className="page-header">
           <div>
             <span className="eyebrow">Accès au compte</span>

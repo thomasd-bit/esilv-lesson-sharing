@@ -19,7 +19,7 @@ export default async function SavedPage() {
         <Link className="button button-quiet button-small" href="/"><ArrowLeft size={16} /> Retour aux ressources</Link>
         <span className="eyebrow"><Bookmark size={14} style={{ verticalAlign: "-2px", marginRight: "5px" }} /> Mes sauvegardes</span>
       </header>
-      <main className="content-wrap">
+      <main id="main-content" className="content-wrap">
         <div className="page-header">
           <div>
             <span className="eyebrow">À relire plus tard</span>
@@ -32,4 +32,3 @@ export default async function SavedPage() {
     </div>
   );
 }
-

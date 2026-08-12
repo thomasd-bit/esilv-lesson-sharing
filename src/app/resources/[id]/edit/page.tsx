@@ -30,7 +30,7 @@ export default async function EditResourcePage({ params }: { params: Promise<{ i
         <Link className="button button-quiet button-small" href={`/resources/${id}`}><ArrowLeft size={16} /> Retour à la ressource</Link>
         <span className="eyebrow"><Pencil size={14} style={{ verticalAlign: "-2px", marginRight: "5px" }} /> Modifier un partage</span>
       </header>
-      <main className="content-wrap">
+      <main id="main-content" className="content-wrap">
         <div className="page-header">
           <div>
             <span className="eyebrow">Mise à jour</span>

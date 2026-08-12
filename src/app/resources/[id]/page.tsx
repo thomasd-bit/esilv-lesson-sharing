@@ -35,10 +35,9 @@ export default async function ResourcePage({ params }: { params: Promise<{ id: s
         <Link className="button button-quiet button-small" href="/"><ArrowLeft size={16} /> Toutes les ressources</Link>
         <span className="eyebrow">Fiche ressource</span>
       </header>
-      <main className="content-wrap">
+      <main id="main-content" className="content-wrap">
         <ResourceDetail resource={resource as Resource} author={author as Profile | null} currentUserId={user.id} />
       </main>
     </div>
   );
 }
-

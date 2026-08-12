@@ -104,7 +104,7 @@ export function Dashboard({ email, profile, userId }: DashboardProps) {
   return (
     <div className="app-page">
       <AppHeader displayName={displayName} email={email} userId={userId} />
-      <main className="content-wrap">
+      <main id="main-content" className="content-wrap">
         <section className="hero-grid">
           <div className="hero-copy">
             <span className="eyebrow">Bonjour {displayName.split(" ")[0]}</span>

@@ -20,7 +20,7 @@ export default async function NotificationsPage() {
   return (
     <div className="app-page">
       <AppHeader displayName={displayName} email={user.email ?? ""} userId={user.id} />
-      <main className="content-wrap">
+      <main id="main-content" className="content-wrap">
         <div className="page-header">
           <div>
             <span className="eyebrow"><Bell size={14} style={{ verticalAlign: "-2px", marginRight: "5px" }} /> Notifications</span>

@@ -57,6 +57,8 @@ npm run test
 npm run build
 ```
 
+La navigation clavier commence par un lien « Aller au contenu », les éléments interactifs gardent un focus visible et les animations respectent la préférence système de mouvement réduit.
+
 `npm run build` peut afficher l’écran de configuration si les variables Supabase ne sont pas présentes ; dès qu’elles sont renseignées, la page d’accueil exige une session et redirige les visiteurs vers l’inscription.
 
 ## Déployer

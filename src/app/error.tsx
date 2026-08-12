@@ -2,7 +2,7 @@
 
 export default function GlobalError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
-    <main className="page-center">
+    <main id="main-content" className="page-center">
       <section className="message-card">
         <span className="eyebrow">Passerelle</span>
         <h1>Un problème est survenu.</h1>
@@ -14,4 +14,3 @@ export default function GlobalError({ reset }: { error: Error & { digest?: strin
     </main>
   );
 }
-
