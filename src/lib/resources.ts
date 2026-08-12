@@ -2,6 +2,8 @@ import type { ResourceWithAuthor } from "@/lib/types";
 
 export type ResourceSort = "recent" | "popular";
 
+export type ResourceOrder = { column: "created_at" | "like_count"; ascending: false };
+
 export const RESOURCE_PAGE_SIZE = 24;
 
 export function getResourcePageRange(offset: number, pageSize = RESOURCE_PAGE_SIZE) {
@@ -12,6 +14,12 @@ export function getResourcePageRange(offset: number, pageSize = RESOURCE_PAGE_SI
 
 export function hasMoreResourcePage(count: number, pageSize = RESOURCE_PAGE_SIZE) {
   return count >= Math.max(1, Math.floor(pageSize));
+}
+
+export function getResourceOrder(sort: ResourceSort): ResourceOrder[] {
+  return sort === "popular"
+    ? [{ column: "like_count", ascending: false }, { column: "created_at", ascending: false }]
+    : [{ column: "created_at", ascending: false }];
 }
 
 export function getProgrammeOptions(resources: Pick<ResourceWithAuthor, "programme">[]) {

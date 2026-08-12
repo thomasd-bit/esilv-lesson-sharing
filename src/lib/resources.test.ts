@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getProgrammeOptions, getResourcePageRange, hasMoreResourcePage, RESOURCE_PAGE_SIZE, sortResources } from "@/lib/resources";
+import { getProgrammeOptions, getResourceOrder, getResourcePageRange, hasMoreResourcePage, RESOURCE_PAGE_SIZE, sortResources } from "@/lib/resources";
 import type { ResourceWithAuthor } from "@/lib/types";
 
 const baseResource = {
@@ -58,5 +58,15 @@ describe("pagination du fil", () => {
   it("considère une page pleine comme potentiellement suivie d’une autre", () => {
     expect(hasMoreResourcePage(23, 24)).toBe(false);
     expect(hasMoreResourcePage(24, 24)).toBe(true);
+  });
+});
+
+describe("ordre demandé au fil", () => {
+  it("ordonne par popularité avant d’appliquer la pagination", () => {
+    expect(getResourceOrder("popular")).toEqual([
+      { column: "like_count", ascending: false },
+      { column: "created_at", ascending: false },
+    ]);
+    expect(getResourceOrder("recent")).toEqual([{ column: "created_at", ascending: false }]);
   });
 });

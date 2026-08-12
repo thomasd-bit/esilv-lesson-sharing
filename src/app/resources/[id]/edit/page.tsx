@@ -17,7 +17,7 @@ export default async function EditResourcePage({ params }: { params: Promise<{ i
 
   const { data: resource } = await supabase
     .from("resources")
-    .select("id, title, description, kind, subject, programme, study_year, link_url, file_path, author_id, status, created_at, updated_at")
+    .select("id, title, description, kind, subject, programme, study_year, link_url, file_path, author_id, status, like_count, created_at, updated_at")
     .eq("id", id)
     .maybeSingle();
 

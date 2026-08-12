@@ -1,5 +1,11 @@
 # Journal des changements
 
+## [0.5.6] - 2026-08-12
+
+### Découverte
+
+- compteur de likes maintenu par Postgres et tri populaire appliqué avant la pagination pour faire remonter les supports réellement appréciés ;
+
 ## [0.5.5] - 2026-08-12
 
 ### Découverte

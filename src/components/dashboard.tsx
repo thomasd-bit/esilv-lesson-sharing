@@ -8,7 +8,7 @@ import { ResourceCard } from "@/components/resource-card";
 import { createClient } from "@/lib/supabase/client";
 import { appConfig } from "@/lib/config";
 import { getProfileCompletion } from "@/lib/profile";
-import { getProgrammeOptions, getResourcePageRange, hasMoreResourcePage, RESOURCE_PAGE_SIZE, sortResources, type ResourceSort } from "@/lib/resources";
+import { getProgrammeOptions, getResourceOrder, getResourcePageRange, hasMoreResourcePage, RESOURCE_PAGE_SIZE, sortResources, type ResourceSort } from "@/lib/resources";
 import { RESOURCE_KINDS, STUDY_YEARS, type Profile, type Resource, type ResourceKind, type ResourceWithAuthor, type StudyYear } from "@/lib/types";
 
 type DashboardProps = {
@@ -42,9 +42,12 @@ export function Dashboard({ email, profile, userId, isMaintainer }: DashboardPro
     const supabase = createClient();
     let request = supabase
       .from("resources")
-      .select("id, title, description, kind, subject, programme, study_year, link_url, file_path, author_id, status, created_at, updated_at")
-      .eq("status", "published")
-      .order("created_at", { ascending: false });
+      .select("id, title, description, kind, subject, programme, study_year, link_url, file_path, author_id, status, like_count, created_at, updated_at")
+      .eq("status", "published");
+
+    for (const order of getResourceOrder(sort)) {
+      request = request.order(order.column, { ascending: order.ascending });
+    }
 
     if (kind !== "all") request = request.eq("kind", kind);
     if (year !== "all") request = request.eq("study_year", year);
@@ -59,26 +62,15 @@ export function Dashboard({ email, profile, userId, isMaintainer }: DashboardPro
 
     const rows = (data ?? []) as Resource[];
     const authorIds = [...new Set(rows.map((resource) => resource.author_id))];
-    const resourceIds = rows.map((resource) => resource.id);
-    const [{ data: profiles }, { data: likes }] = await Promise.all([
-      authorIds.length
-        ? supabase.from("profiles").select("id, display_name, programme, study_year, bio, avatar_url, created_at").in("id", authorIds)
-        : Promise.resolve({ data: [] }),
-      resourceIds.length
-        ? supabase.from("resource_likes").select("resource_id").in("resource_id", resourceIds)
-        : Promise.resolve({ data: [] }),
-    ]);
+    const { data: profiles } = authorIds.length
+      ? await supabase.from("profiles").select("id, display_name, programme, study_year, bio, avatar_url, created_at").in("id", authorIds)
+      : { data: [] };
     const profileRows = (profiles ?? []) as unknown as Profile[];
     const profileById = new Map(profileRows.map((author) => [author.id, author]));
-    const likeCounts = new Map<string, number>();
-    for (const like of (likes ?? []) as Array<{ resource_id: string }>) {
-      likeCounts.set(like.resource_id, (likeCounts.get(like.resource_id) ?? 0) + 1);
-    }
 
     const enrichedResources = rows.map((resource) => ({
       ...resource,
       author: profileById.get(resource.author_id) ?? null,
-      like_count: likeCounts.get(resource.id) ?? 0,
     }));
 
     return {
@@ -86,7 +78,7 @@ export function Dashboard({ email, profile, userId, isMaintainer }: DashboardPro
       programmes: getProgrammeOptions(rows),
       hasMore: hasMoreResourcePage(rows.length),
     };
-  }, [debouncedSearch, kind, programme, year]);
+  }, [debouncedSearch, kind, programme, sort, year]);
 
   useEffect(() => {
     let active = true;

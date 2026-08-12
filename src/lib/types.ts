@@ -24,13 +24,13 @@ export interface Resource {
   file_path: string | null;
   author_id: string;
   status: "published" | "hidden";
+  like_count: number;
   created_at: string;
   updated_at: string;
 }
 
 export interface ResourceWithAuthor extends Resource {
   author: Profile | null;
-  like_count?: number;
 }
 
 export interface ResourceComment {

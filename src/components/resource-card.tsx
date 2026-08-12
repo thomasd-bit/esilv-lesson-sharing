@@ -20,7 +20,7 @@ export function ResourceCard({ resource }: { resource: ResourceWithAuthor }) {
       <div className="resource-card-footer">
         <span>{resource.subject} · {resource.study_year}</span>
         <span className="resource-card-attribution">
-          {resource.like_count !== undefined ? <span className="resource-card-likes" title={`${resource.like_count} appréciation${resource.like_count > 1 ? "s" : ""}`}><Heart size={13} fill={resource.like_count > 0 ? "currentColor" : "none"} /> {resource.like_count}</span> : null}
+          <span className="resource-card-likes" title={`${resource.like_count} appréciation${resource.like_count > 1 ? "s" : ""}`}><Heart size={13} fill={resource.like_count > 0 ? "currentColor" : "none"} /> {resource.like_count}</span>
           <span title={authorName}>{initials(authorName)} · {formatDate(resource.created_at)}</span>
         </span>
       </div>
