@@ -1,0 +1,49 @@
+name: Retour étudiant
+description: Partager une expérience réelle d’utilisation de Passerelle.
+title: "[Feedback] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci pour votre retour. Décrivez une expérience réelle, sans adresse e-mail, document de cours privé ou donnée personnelle.
+  - type: input
+    id: context
+    attributes:
+      label: Contexte d’utilisation
+      description: Formation, année et objectif général, sans information permettant d’identifier une personne.
+      placeholder: "Ex. trouver une annale de probabilités en 3A"
+    validations:
+      required: true
+  - type: textarea
+    id: experience
+    attributes:
+      label: Ce qui s’est passé
+      description: Qu’avez-vous essayé de faire et quel résultat avez-vous obtenu ?
+      placeholder: Décrivez les étapes et le résultat observé.
+    validations:
+      required: true
+  - type: dropdown
+    id: outcome
+    attributes:
+      label: Résultat
+      options:
+        - J’ai trouvé ou partagé ce que je cherchais
+        - J’ai réussi après un détour
+        - Je n’ai pas réussi
+    validations:
+      required: true
+  - type: textarea
+    id: improvement
+    attributes:
+      label: Amélioration prioritaire
+      description: Quelle modification ferait la plus grande différence pour vous ?
+      placeholder: Une idée concrète, même courte.
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Données partagées
+      options:
+        - label: Je n’ai pas inclus de donnée personnelle ou de document soumis à restriction de diffusion.
+          required: true

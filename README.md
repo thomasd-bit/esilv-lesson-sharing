@@ -72,7 +72,12 @@ src/app/                 Routes et pages Next.js
 src/components/          Parcours auth, fil, formulaires et fiche ressource
 src/lib/                 Configuration, validation, formatage et clients Supabase
 supabase/migrations/     Schéma SQL et politiques RLS
+docs/                     Mesure d’adoption et boucle de feedback
 ```
+
+## Suivre l’usage
+
+Le snapshot public et les définitions des indicateurs sont maintenus dans [docs/ADOPTION.md](docs/ADOPTION.md). Les retours étudiants passent par le [formulaire public de feedback](https://github.com/thomasd-bit/esilv-lesson-sharing/issues/new?template=student-feedback.yml) ; ne publiez jamais de donnée personnelle ou de document de cours privé.
 
 ## Contribuer
 
