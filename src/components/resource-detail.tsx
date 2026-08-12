@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Bookmark, Check, ExternalLink, FileDown, Flag, Heart, LoaderCircle, MessageCircle, Pencil, Trash2 } from "lucide-react";
+import { Bookmark, Check, ExternalLink, FileDown, Flag, Heart, LoaderCircle, MessageCircle, Pencil, Share2, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { formatDate, formatMetric, initials, wasEdited } from "@/lib/format";
 import { COMMENT_PAGE_SIZE, getCommentRange, hasMoreCommentPage } from "@/lib/comments";
+import { getResourceShareUrl } from "@/lib/share";
 import { reportSubmissionMessage } from "@/lib/reports";
 import { commentSchema, firstValidationError } from "@/lib/validation";
 import { RESOURCE_KIND_LABELS, type Profile, type Resource, type ResourceComment } from "@/lib/types";
@@ -74,6 +75,8 @@ export function ResourceDetail({ resource, author, currentUserId }: Props) {
   const [editCommentError, setEditCommentError] = useState<string | null>(null);
   const [socialLoading, setSocialLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<"like" | "save" | "comment" | "file" | "delete" | "edit-comment" | "delete-comment" | null>(null);
+  const [shareState, setShareState] = useState<"idle" | "sharing" | "success" | "error">("idle");
+  const [shareMethod, setShareMethod] = useState<"native" | "clipboard" | null>(null);
   const [reporting, setReporting] = useState(false);
   const [reportReason, setReportReason] = useState("");
   const [reportMessage, setReportMessage] = useState<string | null>(null);
@@ -139,6 +142,37 @@ export function ResourceDetail({ resource, author, currentUserId }: Props) {
     const { data, error } = await createClient().storage.from("resource-files").createSignedUrl(resource.file_path, 60 * 10);
     if (!error && data?.signedUrl) window.open(data.signedUrl, "_blank", "noopener,noreferrer");
     setActionLoading(null);
+  }
+
+  async function shareResource() {
+    setShareState("sharing");
+    setShareMethod(null);
+    const url = getResourceShareUrl(window.location.origin, resource.id);
+    try {
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: resource.title, text: "Une ressource utile sur Passerelle", url });
+          setShareMethod("native");
+          setShareState("success");
+          return;
+        } catch (error) {
+          if (error instanceof DOMException && error.name === "AbortError") {
+            setShareState("idle");
+            return;
+          }
+        }
+      }
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+        setShareMethod("clipboard");
+      } else {
+        throw new Error("share-unavailable");
+      }
+      setShareState("success");
+    } catch {
+      setShareMethod(null);
+      setShareState("error");
+    }
   }
 
   async function loadMoreComments() {
@@ -282,11 +316,14 @@ export function ResourceDetail({ resource, author, currentUserId }: Props) {
         <div className="detail-actions">
           {resource.link_url ? <a className="button button-primary button-small" href={resource.link_url} target="_blank" rel="noreferrer"><ExternalLink size={15} /> Ouvrir le lien</a> : null}
           {resource.file_path ? <button className="button button-primary button-small" onClick={() => void downloadFile()} disabled={actionLoading === "file"} type="button">{actionLoading === "file" ? <LoaderCircle className="spin" size={15} /> : <FileDown size={15} />} Télécharger le fichier</button> : null}
+          <button className="action-button" onClick={() => void shareResource()} disabled={shareState === "sharing"} type="button">{shareState === "sharing" ? <LoaderCircle className="spin" size={15} /> : <Share2 size={15} />} {shareState === "sharing" ? "Préparation…" : "Partager"}</button>
           <button className={`action-button ${liked ? "action-button-active" : ""}`} onClick={() => void toggleLike()} disabled={actionLoading === "like"} type="button"><Heart size={15} fill={liked ? "currentColor" : "none"} /> {likeCount}</button>
           <button className={`action-button ${saved ? "action-button-active" : ""}`} onClick={() => void toggleSave()} disabled={actionLoading === "save"} type="button"><Bookmark size={15} fill={saved ? "currentColor" : "none"} /> {saved ? "Enregistré" : "Garder"}</button>
           <button className="action-button" onClick={() => setReporting((value) => !value)} type="button"><Flag size={15} /> Signaler</button>
           {resource.author_id === currentUserId ? <><Link className="action-button" href={`/resources/${resource.id}/edit`}><Pencil size={15} /> Modifier</Link><button className="action-button" onClick={() => void deleteResource()} disabled={actionLoading === "delete"} type="button"><Trash2 size={15} /> Supprimer</button></> : null}
         </div>
+        {shareState === "success" ? <p className="form-success" role="status" style={{ marginTop: "12px" }}>{shareMethod === "clipboard" ? "Le lien de la ressource a été copié." : "La ressource est prête à être partagée."}</p> : null}
+        {shareState === "error" ? <p className="form-error" role="alert" style={{ marginTop: "12px" }}>Le lien n’a pas pu être partagé depuis cet appareil.</p> : null}
         {reporting ? (
           <form className="comment-form" onSubmit={(event) => void submitReport(event)} style={{ marginTop: "18px" }}>
             <label className="field-hint" htmlFor="reportReason">Qu’est-ce qui pose problème ?</label>
