@@ -1,5 +1,11 @@
 # Journal des changements
 
+## [0.5.14] - 2026-08-12
+
+### Parcours étudiant
+
+- partage d’une fiche par feuille native sur mobile ou copie automatique de son lien canonique sur les autres navigateurs ;
+
 ## [0.5.13] - 2026-08-12
 
 ### Parcours étudiant
