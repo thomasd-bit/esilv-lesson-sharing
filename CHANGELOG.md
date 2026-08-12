@@ -1,5 +1,11 @@
 # Journal des changements
 
+## [0.5.4] - 2026-08-12
+
+### Parcours étudiant
+
+- notifications rendues explicites lorsqu’une ressource a été masquée ou n’est plus accessible, sans lien cassé vers sa fiche ;
+
 ## [0.5.3] - 2026-08-12
 
 ### Mainteneur

@@ -1172,12 +1172,14 @@ code {
   min-width: 0;
 }
 
-.notification-item-link {
+.notification-item-link,
+.notification-item-content {
   display: grid;
   gap: 4px;
 }
 
-.notification-item-link strong {
+.notification-item-link strong,
+.notification-item-content strong {
   overflow: hidden;
   color: var(--ink);
   font-size: 0.88rem;
@@ -1189,7 +1191,8 @@ code {
   color: var(--blue);
 }
 
-.notification-item-link time {
+.notification-item-link time,
+.notification-item-content time {
   color: var(--muted);
   font-size: 0.73rem;
 }

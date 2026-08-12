@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { filterNotifications } from "@/lib/notifications";
+import { filterNotifications, notificationResourceLabel } from "@/lib/notifications";
 
 describe("filtre des notifications", () => {
   const notifications = [
@@ -14,5 +14,10 @@ describe("filtre des notifications", () => {
 
   it("isole les notifications non lues", () => {
     expect(filterNotifications(notifications, "unread").map((notification) => notification.id)).toEqual(["unread-a", "unread-b"]);
+  });
+
+  it("signale quand la ressource d’une notification n’est plus accessible", () => {
+    expect(notificationResourceLabel("Fiche de calcul")).toBe("Fiche de calcul");
+    expect(notificationResourceLabel(null)).toBe("une ressource devenue indisponible");
   });
 });

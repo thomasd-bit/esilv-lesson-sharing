@@ -4,13 +4,13 @@ import Link from "next/link";
 import { Bell, CheckCheck, Heart, LoaderCircle, MessageCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { formatDate, notificationMessage } from "@/lib/format";
-import { filterNotifications, type NotificationFilter } from "@/lib/notifications";
+import { filterNotifications, notificationResourceLabel, type NotificationFilter } from "@/lib/notifications";
 import { createClient } from "@/lib/supabase/client";
 import type { AppNotification, Profile } from "@/lib/types";
 
 type NotificationView = AppNotification & {
   actor: Profile | null;
-  resourceTitle: string;
+  resourceTitle: string | null;
 };
 
 const notificationSelect = "id, recipient_id, actor_id, resource_id, comment_id, type, created_at, read_at";
@@ -61,7 +61,7 @@ export function NotificationsList({ userId }: { userId: string }) {
       setNotifications(rows.map((notification) => ({
         ...notification,
         actor: profileById.get(notification.actor_id) ?? null,
-        resourceTitle: resourceById.get(notification.resource_id ?? "") ?? "une ressource",
+        resourceTitle: resourceById.get(notification.resource_id ?? "") ?? null,
       })));
       setLoading(false);
     }
@@ -136,17 +136,17 @@ export function NotificationsList({ userId }: { userId: string }) {
         <div className="notification-list">
           {visibleNotifications.map((notification) => {
             const unread = !notification.read_at;
-            const href = notification.resource_id ? `/resources/${notification.resource_id}` : "/notifications";
+            const resourceAvailable = Boolean(notification.resourceTitle);
+            const resourceHref = resourceAvailable && notification.resource_id ? `/resources/${notification.resource_id}` : null;
+            const resourceLabel = notificationResourceLabel(notification.resourceTitle);
+            const content = <><strong>{notificationMessage(notification.type, notification.actor?.display_name ?? "", resourceLabel)}</strong><time dateTime={notification.created_at}>{formatDate(notification.created_at)}</time></>;
             return (
               <article className={`notification-item ${unread ? "notification-item-unread" : ""}`} key={notification.id}>
                 <span className={`notification-item-icon notification-item-icon-${notification.type}`} aria-hidden="true">
                   {notification.type === "like" ? <Heart size={17} fill="currentColor" /> : <MessageCircle size={17} />}
                 </span>
                 <div className="notification-item-body">
-                  <Link className="notification-item-link" href={href} onClick={() => { if (unread) void markAsRead(notification.id); }}>
-                    <strong>{notificationMessage(notification.type, notification.actor?.display_name ?? "", notification.resourceTitle)}</strong>
-                    <time dateTime={notification.created_at}>{formatDate(notification.created_at)}</time>
-                  </Link>
+                  {resourceHref ? <Link className="notification-item-link" href={resourceHref} onClick={() => { if (unread) void markAsRead(notification.id); }}>{content}</Link> : <span className="notification-item-content">{content}</span>}
                 </div>
                 {unread ? <button className="notification-read-button" onClick={() => void markAsRead(notification.id)} type="button">Marquer comme lu</button> : null}
               </article>
