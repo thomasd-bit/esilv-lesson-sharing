@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { AppHeader } from "@/components/app-header";
 import { NotificationsList } from "@/components/notifications-list";
 import { hasSupabaseConfig } from "@/lib/config";
+import { isMaintainerEmail } from "@/lib/moderation";
 import { createClient } from "@/lib/supabase/server";
 import type { Profile } from "@/lib/types";
 
@@ -19,7 +20,7 @@ export default async function NotificationsPage() {
 
   return (
     <div className="app-page">
-      <AppHeader displayName={displayName} email={user.email ?? ""} userId={user.id} />
+      <AppHeader displayName={displayName} email={user.email ?? ""} userId={user.id} isMaintainer={isMaintainerEmail(user.email, process.env.MAINTAINER_EMAILS ?? "")} />
       <main id="main-content" className="content-wrap">
         <div className="page-header">
           <div>

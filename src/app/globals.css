@@ -574,6 +574,12 @@ code {
   color: var(--blue);
 }
 
+.header-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
 .user-chip {
   display: inline-flex;
   align-items: center;
@@ -1136,6 +1142,166 @@ code {
   background: transparent;
 }
 
+.moderation-stats {
+  margin-bottom: 22px;
+}
+
+.moderation-panel {
+  padding: clamp(18px, 3vw, 28px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 253, 249, 0.82);
+  box-shadow: var(--shadow);
+}
+
+.moderation-toolbar {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 18px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.moderation-toolbar h2 {
+  margin: 7px 0 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.55rem;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+}
+
+.moderation-filters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--paper);
+}
+
+.moderation-filter {
+  min-height: 30px;
+  padding: 7px 9px;
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.moderation-filter span {
+  margin-left: 3px;
+  opacity: 0.7;
+}
+
+.moderation-filter-active {
+  color: var(--blue-dark);
+  background: white;
+  box-shadow: 0 2px 7px rgba(25, 42, 58, 0.08);
+}
+
+.moderation-list {
+  display: grid;
+  gap: 12px;
+  padding-top: 18px;
+}
+
+.moderation-card {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.moderation-card-top,
+.moderation-status-row,
+.moderation-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.moderation-card-top {
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.moderation-status-row {
+  flex-wrap: wrap;
+}
+
+.moderation-status-row time {
+  color: var(--muted);
+  font-size: 0.73rem;
+}
+
+.status-pill {
+  display: inline-flex;
+  min-height: 25px;
+  align-items: center;
+  gap: 5px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.status-pill-open {
+  color: #9d4536;
+  background: var(--coral-pale);
+}
+
+.status-pill-reviewed {
+  color: var(--blue-dark);
+  background: var(--blue-pale);
+}
+
+.status-pill-closed {
+  color: var(--green);
+  background: var(--green-pale);
+}
+
+.moderation-card h3 {
+  margin: 14px 0 7px;
+  font-size: 1rem;
+}
+
+.moderation-reason {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.88rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.moderation-meta {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.moderation-meta strong {
+  color: var(--ink);
+}
+
+.moderation-actions {
+  flex-wrap: wrap;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.moderation-empty {
+  margin-top: 18px;
+  border: 0;
+  background: transparent;
+}
+
+.message-card-icon {
+  color: var(--blue);
+}
+
 .collection-panel {
   margin-bottom: 25px;
   padding: 22px;
@@ -1633,7 +1799,8 @@ code {
   .page-header,
   .section-heading,
   .collection-panel-header,
-  .notifications-toolbar {
+  .notifications-toolbar,
+  .moderation-toolbar {
     align-items: start;
     flex-direction: column;
   }
@@ -1654,6 +1821,15 @@ code {
 
   .notification-text {
     display: none;
+  }
+
+  .moderation-filters {
+    justify-content: flex-start;
+  }
+
+  .moderation-card-top {
+    align-items: start;
+    flex-direction: column;
   }
 
   .notification-item {

@@ -32,9 +32,13 @@ NEXT_PUBLIC_SUPABASE_URL=https://votre-projet.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_ALLOWED_EMAIL_DOMAINS=devinci.fr,edu.devinci.fr,ext.devinci.fr,esilv.fr
+SUPABASE_SERVICE_ROLE_KEY=sb_secret_...
+MAINTAINER_EMAILS=maintainer@ecole.fr
 ```
 
 `NEXT_PUBLIC_ALLOWED_EMAIL_DOMAINS` accepte une liste séparée par des virgules. Elle doit être ajustée aux domaines réellement attribués aux étudiants par l’école. Une liste vide désactive ce filtre pendant un test local.
+
+`MAINTAINER_EMAILS` accepte une liste d’adresses séparées par des virgules et donne accès à `/moderation`. La file utilise `SUPABASE_SERVICE_ROLE_KEY` uniquement côté serveur pour lire et mettre à jour les signalements malgré RLS ; ne préfixez jamais cette clé par `NEXT_PUBLIC_`, ne la committez pas et ne l’utilisez pas dans un composant client.
 
 ## Préparer Supabase
 
@@ -44,7 +48,7 @@ NEXT_PUBLIC_ALLOWED_EMAIL_DOMAINS=devinci.fr,edu.devinci.fr,ext.devinci.fr,esilv
 4. Dans Authentication → Providers → Email, choisissez si les nouveaux comptes doivent confirmer leur adresse. En production, gardez la confirmation activée. Ajoutez aussi l’URL de callback de récupération si votre configuration Supabase utilise une liste stricte de Redirect URLs.
 5. Copiez l’URL du projet et sa publishable key dans `.env.local`.
 
-Les migrations créent les tables de profils, ressources, likes, sauvegardes, commentaires, signalements, collections privées et notifications, ainsi qu’une liste de domaines autorisés pour l’inscription. Chaque étudiant reçoit automatiquement une collection « À lire ». Un like ou un commentaire crée une notification côté base pour l’auteur de la ressource, sans notification pour ses propres actions. Les années d’étude acceptées sont `1A`, `2A`, `3A`, `4A`, `5A` et `Autre`; la contrainte SQL est ajoutée `not valid` pour ne pas bloquer une base qui contiendrait déjà une ancienne valeur à nettoyer. Un même étudiant ne peut garder qu’un signalement ouvert par ressource. Elles activent RLS sur chaque table et créent le bucket privé `resource-files`. La clé secrète Supabase ne doit jamais être mise dans le navigateur ni dans Git.
+Les migrations créent les tables de profils, ressources, likes, sauvegardes, commentaires, signalements, collections privées et notifications, ainsi qu’une liste de domaines autorisés pour l’inscription. Chaque étudiant reçoit automatiquement une collection « À lire ». Un like ou un commentaire crée une notification côté base pour l’auteur de la ressource, sans notification pour ses propres actions. Les années d’étude acceptées sont `1A`, `2A`, `3A`, `4A`, `5A` et `Autre`; la contrainte SQL est ajoutée `not valid` pour ne pas bloquer une base qui contiendrait déjà une ancienne valeur à nettoyer. Un même étudiant ne peut garder qu’un signalement ouvert par ressource. La page privée `/moderation` permet aux adresses de `MAINTAINER_EMAILS` de traiter ou fermer ces signalements. Elles activent RLS sur chaque table et créent le bucket privé `resource-files`. La clé secrète Supabase ne doit jamais être mise dans le navigateur ni dans Git.
 
 Dans Storage, gardez `resource-files` privé et configurez une limite de 10 Mo ainsi que les types MIME correspondant aux PDF, images PNG/JPEG/WebP, documents Word, présentations PowerPoint, tableurs Excel et archives ZIP. L’interface applique la même règle avant l’envoi, mais la restriction du bucket Supabase doit rester le contrôle effectif pour les requêtes qui contournent le navigateur.
 
@@ -63,14 +67,15 @@ La navigation clavier commence par un lien « Aller au contenu », les élément
 
 ## Déployer
 
-Vercel convient au serveur Next.js. Configurez les quatre variables d’environnement dans le projet Vercel, puis ajoutez l’URL de production suivie de `/auth/callback` dans les Redirect URLs Supabase. Le schéma de données reste hébergé dans Supabase ; aucun secret de service n’est nécessaire dans l’application.
+Vercel convient au serveur Next.js. Configurez les variables publiques et, si la modération est activée, `SUPABASE_SERVICE_ROLE_KEY` et `MAINTAINER_EMAILS` comme variables serveur uniquement dans le projet Vercel, puis ajoutez l’URL de production suivie de `/auth/callback` dans les Redirect URLs Supabase. Le schéma de données reste hébergé dans Supabase.
 
 ## Organisation du code
 
 ```text
 src/app/                 Routes et pages Next.js
 src/components/          Parcours auth, fil, formulaires et fiche ressource
-src/lib/                 Configuration, validation, formatage et clients Supabase
+src/lib/                 Configuration, validation, formatage, modération et clients Supabase
+src/app/moderation/      File privée de suivi des signalements
 supabase/migrations/     Schéma SQL et politiques RLS
 docs/                     Mesure d’adoption et boucle de feedback
 ```

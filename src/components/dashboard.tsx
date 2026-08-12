@@ -15,9 +15,10 @@ type DashboardProps = {
   email: string;
   profile: Profile | null;
   userId: string;
+  isMaintainer: boolean;
 };
 
-export function Dashboard({ email, profile, userId }: DashboardProps) {
+export function Dashboard({ email, profile, userId, isMaintainer }: DashboardProps) {
   const [resources, setResources] = useState<ResourceWithAuthor[]>([]);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -103,7 +104,7 @@ export function Dashboard({ email, profile, userId }: DashboardProps) {
 
   return (
     <div className="app-page">
-      <AppHeader displayName={displayName} email={email} userId={userId} />
+      <AppHeader displayName={displayName} email={email} userId={userId} isMaintainer={isMaintainer} />
       <main id="main-content" className="content-wrap">
         <section className="hero-grid">
           <div className="hero-copy">

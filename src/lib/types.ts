@@ -42,6 +42,17 @@ export interface ResourceComment {
   author: Profile | null;
 }
 
+export type ResourceReportStatus = "open" | "reviewed" | "closed";
+
+export interface ResourceReport {
+  id: string;
+  resource_id: string;
+  reporter_id: string;
+  reason: string;
+  status: ResourceReportStatus;
+  created_at: string;
+}
+
 export interface ResourceCollection {
   id: string;
   owner_id: string;

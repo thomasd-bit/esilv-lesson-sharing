@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { ConfigurationNotice } from "@/components/configuration-notice";
 import { Dashboard } from "@/components/dashboard";
 import { hasSupabaseConfig } from "@/lib/config";
+import { isMaintainerEmail } from "@/lib/moderation";
 import { createClient } from "@/lib/supabase/server";
 import type { Profile } from "@/lib/types";
 
@@ -25,5 +26,5 @@ export default async function HomePage() {
     .eq("id", user.id)
     .maybeSingle();
 
-  return <Dashboard email={user.email ?? ""} profile={profile as Profile | null} userId={user.id} />;
+  return <Dashboard email={user.email ?? ""} profile={profile as Profile | null} userId={user.id} isMaintainer={isMaintainerEmail(user.email, process.env.MAINTAINER_EMAILS ?? "")} />;
 }

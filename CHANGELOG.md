@@ -1,5 +1,12 @@
 # Journal des changements
 
+## [À venir]
+
+### Mainteneur
+
+- file privée de modération pour consulter les signalements récents et les faire passer de « à traiter » à « traité » ou « fermé » ;
+- accès à la modération limité aux adresses configurées côté serveur, sans exposer la clé de service dans le navigateur ;
+
 ## [0.4.1] - 2026-08-12
 
 ### Sécurité

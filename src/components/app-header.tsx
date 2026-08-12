@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, LogOut, Plus } from "lucide-react";
+import { Bell, LogOut, Plus, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { appConfig } from "@/lib/config";
 import { createClient } from "@/lib/supabase/client";
 import { initials } from "@/lib/format";
 
-export function AppHeader({ displayName, email, userId }: { displayName: string; email: string; userId: string }) {
+export function AppHeader({ displayName, email, userId, isMaintainer = false }: { displayName: string; email: string; userId: string; isMaintainer?: boolean }) {
   const router = useRouter();
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -51,6 +51,7 @@ export function AppHeader({ displayName, email, userId }: { displayName: string;
         <Link href="/">Ressources</Link>
         <Link href="/saved">Enregistrés</Link>
         <Link href="/profile">Mon profil</Link>
+        {isMaintainer ? <Link href="/moderation"><ShieldCheck size={15} /> Modération</Link> : null}
       </nav>
       <div className="header-actions">
         <Link className="notification-link" href="/notifications" aria-label={unreadCount ? `${unreadCount} notification${unreadCount > 1 ? "s" : ""} non lue${unreadCount > 1 ? "s" : ""}` : "Notifications"}>
