@@ -7,6 +7,7 @@ import { AppHeader } from "@/components/app-header";
 import { ResourceCard } from "@/components/resource-card";
 import { createClient } from "@/lib/supabase/client";
 import { appConfig } from "@/lib/config";
+import { getProfileCompletion } from "@/lib/profile";
 import { sortResources, type ResourceSort } from "@/lib/resources";
 import { RESOURCE_KINDS, STUDY_YEARS, type Profile, type Resource, type ResourceKind, type ResourceWithAuthor, type StudyYear } from "@/lib/types";
 
@@ -98,6 +99,7 @@ export function Dashboard({ email, profile, userId }: DashboardProps) {
   const visibleResources = useMemo(() => sortResources(resources, sort), [resources, sort]);
   const programmeCount = useMemo(() => new Set(visibleResources.map((resource) => resource.programme)).size, [visibleResources]);
   const displayName = profile?.display_name ?? email.split("@")[0] ?? "Étudiant";
+  const profileCompletion = getProfileCompletion(profile);
 
   return (
     <div className="app-page">
@@ -109,18 +111,28 @@ export function Dashboard({ email, profile, userId }: DashboardProps) {
             <h1>Ce que la promo a appris, la promo le garde.</h1>
             <p>{appConfig.description} Trouvez une ressource, ajoutez votre retour, puis transmettez ce qui vous a débloqué.</p>
           </div>
-          <aside className="profile-card">
-            <div className="profile-card-top">
-              <span className="avatar">{displayName.slice(0, 1).toUpperCase()}</span>
-              <div>
-                <strong>{displayName}</strong>
-                <small>{profile?.programme ?? "Formation à renseigner"}</small>
+          <aside className="hero-aside">
+            <div className="profile-card">
+              <div className="profile-card-top">
+                <span className="avatar">{displayName.slice(0, 1).toUpperCase()}</span>
+                <div>
+                  <strong>{displayName}</strong>
+                  <small>{profile?.programme ?? "Formation à renseigner"}</small>
+                </div>
+              </div>
+              <div className="profile-meta">
+                {profile?.study_year ? <span className="pill">{profile.study_year}</span> : null}
+                <span className="pill pill-coral">Étudiant vérifié</span>
               </div>
             </div>
-            <div className="profile-meta">
-              {profile?.study_year ? <span className="pill">{profile.study_year}</span> : null}
-              <span className="pill pill-coral">Étudiant vérifié</span>
-            </div>
+            {profileCompletion.percent < 100 ? (
+              <div className="profile-completion-card">
+                <div className="profile-completion-top"><span>Profil à compléter</span><strong>{profileCompletion.percent}%</strong></div>
+                <div className="profile-progress" role="progressbar" aria-label="Complétude du profil" aria-valuemin={0} aria-valuemax={100} aria-valuenow={profileCompletion.percent}><span style={{ width: `${profileCompletion.percent}%` }} /></div>
+                <p>Ajoutez votre formation et votre année pour apparaître dans les bons filtres.</p>
+                <Link className="button button-secondary button-small" href="/profile">Compléter mon profil</Link>
+              </div>
+            ) : null}
           </aside>
         </section>
 

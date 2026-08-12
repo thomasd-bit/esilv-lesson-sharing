@@ -624,6 +624,12 @@ code {
   font-size: 1.03rem;
 }
 
+.hero-aside {
+  display: grid;
+  align-content: end;
+  gap: 10px;
+}
+
 .profile-card {
   padding: 20px;
   border: 1px solid rgba(228, 231, 232, 0.9);
@@ -654,6 +660,54 @@ code {
   display: flex;
   flex-wrap: wrap;
   gap: 7px;
+}
+
+.profile-completion-card {
+  padding: 16px;
+  border: 1px solid #cbdde0;
+  border-radius: var(--radius-md);
+  background: rgba(232, 241, 243, 0.62);
+}
+
+.profile-completion-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--blue-dark);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.profile-completion-top strong {
+  font-size: 0.78rem;
+}
+
+.profile-progress {
+  height: 6px;
+  margin: 11px 0 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(27, 91, 118, 0.14);
+}
+
+.profile-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--coral);
+  transition: width 200ms ease;
+}
+
+.profile-completion-card p {
+  margin: 0 0 13px;
+  color: var(--muted);
+  font-size: 0.77rem;
+  line-height: 1.45;
+}
+
+.profile-completion-card .button {
+  width: 100%;
 }
 
 .pill {
