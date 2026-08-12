@@ -35,7 +35,7 @@ export default async function EditResourcePage({ params }: { params: Promise<{ i
           <div>
             <span className="eyebrow">Mise à jour</span>
             <h1>Gardez ce support utile dans le temps.</h1>
-            <p>Corrigez le contexte, la matière ou le lien sans perdre les likes, les sauvegardes et les retours déjà reçus.</p>
+            <p>Corrigez le contexte, remplacez le fichier ou mettez à jour le lien sans perdre les likes, les sauvegardes et les retours déjà reçus.</p>
           </div>
         </div>
         <div className="form-card">

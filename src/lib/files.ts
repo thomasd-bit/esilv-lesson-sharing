@@ -32,6 +32,17 @@ const ACCEPTED_RESOURCE_MIME_TYPES = new Set([
   "application/x-zip-compressed",
 ]);
 
+export function resourceFilePath(userId: string, fileId: string, fileName: string) {
+  const safeName = fileName
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9._-]/g, "-")
+    .replace(/-+/g, "-")
+    .slice(0, 120);
+
+  return `${userId}/${fileId}-${safeName || "resource"}`;
+}
+
 export function resourceFileError(file: Pick<File, "name" | "size" | "type">) {
   if (file.size > MAX_RESOURCE_FILE_SIZE) {
     return "Le fichier ne doit pas dépasser 10 Mo.";

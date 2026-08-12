@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { resourceFileError } from "@/lib/files";
+import { resourceFileError, resourceFilePath } from "@/lib/files";
 
 describe("validation des fichiers partagés", () => {
+  it("construit un chemin de fichier stable et lisible", () => {
+    expect(resourceFilePath("user-1", "file-1", "fiche résumé final.pdf")).toBe("user-1/file-1-fiche-resume-final.pdf");
+  });
+
   it("accepte un PDF connu sous la limite", () => {
     expect(resourceFileError({ name: "annale.pdf", size: 200_000, type: "application/pdf" })).toBeNull();
   });

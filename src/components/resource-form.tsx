@@ -4,18 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FileUp, LoaderCircle, Save, Send } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { resourceFileError, RESOURCE_FILE_ACCEPT } from "@/lib/files";
+import { resourceFileError, resourceFilePath, RESOURCE_FILE_ACCEPT } from "@/lib/files";
 import { firstValidationError, resourceSchema } from "@/lib/validation";
 import { RESOURCE_KINDS, STUDY_YEARS, type Resource } from "@/lib/types";
-
-function safeFileName(name: string) {
-  return name
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zA-Z0-9._-]/g, "-")
-    .replace(/-+/g, "-")
-    .slice(0, 120);
-}
 
 type ResourceFormProps = {
   initialProgramme: string;
@@ -76,8 +67,10 @@ export function ResourceForm({ initialProgramme, initialStudyYear, resource }: R
     }
 
     let uploadedPath: string | null = resource?.file_path ?? null;
-    if (!editing && file) {
-      uploadedPath = `${user.id}/${crypto.randomUUID()}-${safeFileName(file.name)}`;
+    let replacementPath: string | null = null;
+    if (file) {
+      replacementPath = resourceFilePath(user.id, crypto.randomUUID(), file.name);
+      uploadedPath = replacementPath;
       const { error: uploadError } = await supabase.storage
         .from("resource-files")
         .upload(uploadedPath, file, { cacheControl: "3600", upsert: false });
@@ -104,12 +97,16 @@ export function ResourceForm({ initialProgramme, initialStudyYear, resource }: R
     const { data, error: saveError } = await query.select("id").single();
 
     if (saveError || !data) {
-      if (!editing && uploadedPath) {
-        await supabase.storage.from("resource-files").remove([uploadedPath]);
+      if (replacementPath) {
+        await supabase.storage.from("resource-files").remove([replacementPath]);
       }
       setError(editing ? "La ressource n’a pas pu être modifiée. Vérifiez les informations puis réessayez." : "La ressource n’a pas pu être publiée. Vérifiez les informations puis réessayez.");
       setPending(false);
       return;
+    }
+
+    if (editing && resource?.file_path && resource.file_path !== uploadedPath) {
+      await supabase.storage.from("resource-files").remove([resource.file_path]);
     }
 
     router.push(`/resources/${data.id}`);
@@ -153,14 +150,15 @@ export function ResourceForm({ initialProgramme, initialStudyYear, resource }: R
           <label htmlFor="linkUrl">Lien externe (facultatif si vous envoyez un fichier)</label>
           <input id="linkUrl" name="linkUrl" type="url" defaultValue={resource?.link_url ?? ""} placeholder="https://…" inputMode="url" />
         </div>
-        {!editing ? <div className="field field-full">
-          <label htmlFor="file">Fichier (facultatif si vous ajoutez un lien)</label>
+        <div className="field field-full">
+          <label htmlFor="file">{editing ? "Remplacer le fichier (facultatif)" : "Fichier (facultatif si vous ajoutez un lien)"}</label>
           <div className="file-drop">
             <FileUp size={22} aria-hidden="true" />
-            <span>{selectedFile ?? "PDF, image, document ou archive — 10 Mo maximum"}</span>
+            <span>{selectedFile ?? (editing ? "Laissez vide pour conserver le fichier actuel" : "PDF, image, document ou archive — 10 Mo maximum")}</span>
             <input id="file" name="file" type="file" accept={RESOURCE_FILE_ACCEPT} onChange={(event) => setSelectedFile(event.target.files?.[0]?.name ?? null)} />
           </div>
-        </div> : <p className="field-hint field-full resource-edit-file-note">Le fichier déjà partagé est conservé. Pour le remplacer, supprimez cette ressource puis publiez la nouvelle version.</p>}
+          <span className="field-hint">10 Mo maximum. Le fichier actuel est conservé si vous ne choisissez rien.</span>
+        </div>
       </div>
 
       {error ? <p className="form-error" role="alert">{error}</p> : null}
