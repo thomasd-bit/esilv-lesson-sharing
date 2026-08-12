@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { collectionSchema, passwordResetSchema, profileSchema, resourceSchema, signInSchema, signUpSchema } from "@/lib/validation";
+import { collectionSchema, passwordResetSchema, profileSchema, resourceSchema, savedSearchSchema, signInSchema, signUpSchema } from "@/lib/validation";
 
 describe("validation des comptes", () => {
   it("accepte une inscription complète", () => {
@@ -75,6 +75,17 @@ describe("validation des collections", () => {
   it("refuse un nom de collection trop court", () => {
     const result = collectionSchema.safeParse({ name: "A", description: "" });
     expect(result.success).toBe(false);
+  });
+});
+
+describe("validation des recherches enregistrées", () => {
+  it("accepte un nom de recherche explicite", () => {
+    expect(savedSearchSchema.safeParse({ name: "Annales de probabilités" }).success).toBe(true);
+  });
+
+  it("refuse un nom vide ou trop court", () => {
+    expect(savedSearchSchema.safeParse({ name: " " }).success).toBe(false);
+    expect(savedSearchSchema.safeParse({ name: "A" }).success).toBe(false);
   });
 });
 

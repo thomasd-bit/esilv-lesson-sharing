@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildResourceFilterQuery, getProgrammeOptions, getResourceActionErrorMessage, getResourceOrder, getResourcePageRange, hasMoreResourcePage, parseResourceFilters, RESOURCE_PAGE_SIZE, sortResources } from "@/lib/resources";
+import { buildResourceFilterQuery, getProgrammeOptions, getResourceActionErrorMessage, getResourceOrder, getResourcePageRange, hasMoreResourcePage, normalizeResourceFilters, parseResourceFilters, RESOURCE_PAGE_SIZE, sortResources } from "@/lib/resources";
 import type { ResourceWithAuthor } from "@/lib/types";
 
 const baseResource = {
@@ -82,6 +82,16 @@ describe("retours d’action sur une ressource", () => {
 });
 
 describe("filtres partageables du fil", () => {
+  it("normalise une recherche avant de la conserver", () => {
+    expect(normalizeResourceFilters({ search: `  ${"x".repeat(100)}  `, kind: "exam", year: "3A", programme: "  ", sort: "popular" })).toEqual({
+      search: "x".repeat(80),
+      kind: "exam",
+      year: "3A",
+      programme: "all",
+      sort: "popular",
+    });
+  });
+
   it("restaure uniquement les valeurs de filtre reconnues depuis l’URL", () => {
     const filters = parseResourceFilters(new URLSearchParams("q= probabilités &kind=exam&year=3A&programme=Cycle%20ing%C3%A9nieur&sort=popular"));
 

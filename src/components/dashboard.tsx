@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { BookOpen, FilePlus2, LoaderCircle, Search, UsersRound } from "lucide-react";
+import { BookOpen, BookmarkPlus, FilePlus2, LoaderCircle, Search, Trash2, UsersRound } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
 import { ResourceCard } from "@/components/resource-card";
 import { createClient } from "@/lib/supabase/client";
 import { appConfig } from "@/lib/config";
 import { getProfileCompletion } from "@/lib/profile";
-import { buildResourceFilterQuery, getProgrammeOptions, getResourceOrder, getResourcePageRange, hasMoreResourcePage, RESOURCE_PAGE_SIZE, sortResources, type ResourceFilterState, type ResourceSort } from "@/lib/resources";
-import { RESOURCE_KINDS, STUDY_YEARS, type Profile, type Resource, type ResourceKind, type ResourceWithAuthor, type StudyYear } from "@/lib/types";
+import { buildResourceFilterQuery, getProgrammeOptions, getResourceOrder, getResourcePageRange, hasMoreResourcePage, normalizeResourceFilters, RESOURCE_PAGE_SIZE, sortResources, type ResourceFilterState, type ResourceSort } from "@/lib/resources";
+import { RESOURCE_KIND_LABELS, RESOURCE_KINDS, STUDY_YEARS, type Profile, type Resource, type ResourceKind, type ResourceWithAuthor, type SavedResourceSearch, type StudyYear } from "@/lib/types";
+import { firstValidationError, savedSearchSchema } from "@/lib/validation";
 
 type DashboardProps = {
   email: string;
@@ -18,6 +19,20 @@ type DashboardProps = {
   isMaintainer: boolean;
   initialFilters: ResourceFilterState;
 };
+
+const savedSearchSelect = "id, owner_id, name, search, kind, study_year, programme, sort, created_at, updated_at";
+
+function describeSavedSearch(savedSearch: SavedResourceSearch) {
+  const parts = [
+    savedSearch.search ? `« ${savedSearch.search} »` : null,
+    savedSearch.kind === "all" ? null : RESOURCE_KIND_LABELS[savedSearch.kind],
+    savedSearch.study_year === "all" ? null : savedSearch.study_year,
+    savedSearch.programme === "all" ? null : savedSearch.programme,
+    savedSearch.sort === "popular" ? "Plus appréciées" : "Plus récentes",
+  ].filter(Boolean);
+
+  return parts.join(" · ") || "Tous les supports";
+}
 
 export function Dashboard({ email, profile, userId, isMaintainer, initialFilters }: DashboardProps) {
   const [resources, setResources] = useState<ResourceWithAuthor[]>([]);
@@ -28,6 +43,13 @@ export function Dashboard({ email, profile, userId, isMaintainer, initialFilters
   const [programme, setProgramme] = useState(initialFilters.programme);
   const [availableProgrammes, setAvailableProgrammes] = useState<string[]>([]);
   const [sort, setSort] = useState<ResourceSort>(initialFilters.sort);
+  const [savedSearches, setSavedSearches] = useState<SavedResourceSearch[]>([]);
+  const [savedSearchesError, setSavedSearchesError] = useState<string | null>(null);
+  const [showSaveSearchForm, setShowSaveSearchForm] = useState(false);
+  const [savedSearchName, setSavedSearchName] = useState("");
+  const [savedSearchError, setSavedSearchError] = useState<string | null>(null);
+  const [savedSearchSaving, setSavedSearchSaving] = useState(false);
+  const [savedSearchDeletingId, setSavedSearchDeletingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
@@ -45,6 +67,27 @@ export function Dashboard({ email, profile, userId, isMaintainer, initialFilters
     const currentUrl = `${window.location.pathname}${window.location.search}`;
     if (currentUrl !== nextUrl) window.history.replaceState(window.history.state, "", nextUrl);
   }, [debouncedSearch, kind, programme, sort, year]);
+
+  useEffect(() => {
+    let active = true;
+    async function loadSavedSearches() {
+      const { data, error: savedSearchError } = await createClient()
+        .from("saved_resource_searches")
+        .select(savedSearchSelect)
+        .eq("owner_id", userId)
+        .order("created_at", { ascending: false });
+      if (!active) return;
+      if (savedSearchError) {
+        setSavedSearchesError("Les recherches enregistrées ne sont pas disponibles pour le moment.");
+        return;
+      }
+      setSavedSearches((data ?? []) as unknown as SavedResourceSearch[]);
+      setSavedSearchesError(null);
+    }
+
+    void loadSavedSearches();
+    return () => { active = false; };
+  }, [userId]);
 
   const loadPage = useCallback(async (offset: number) => {
     const supabase = createClient();
@@ -139,11 +182,86 @@ export function Dashboard({ email, profile, userId, isMaintainer, initialFilters
     }
   }
 
+  function applySavedSearch(savedSearch: SavedResourceSearch) {
+    setSearch(savedSearch.search);
+    setDebouncedSearch(savedSearch.search);
+    setKind(savedSearch.kind);
+    setYear(savedSearch.study_year);
+    setProgramme(savedSearch.programme || "all");
+    setSort(savedSearch.sort);
+    setShowSaveSearchForm(false);
+    setSavedSearchError(null);
+  }
+
+  async function saveCurrentSearch(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const parsed = savedSearchSchema.safeParse({ name: savedSearchName });
+    if (!parsed.success) {
+      setSavedSearchError(firstValidationError(parsed.error));
+      return;
+    }
+
+    const filters = normalizeResourceFilters({ search, kind, year, programme, sort });
+    if (!buildResourceFilterQuery(filters)) {
+      setSavedSearchError("Ajoutez au moins un filtre avant d’enregistrer cette recherche.");
+      return;
+    }
+
+    setSavedSearchSaving(true);
+    setSavedSearchError(null);
+    try {
+      const { data, error: insertError } = await createClient()
+        .from("saved_resource_searches")
+        .insert({
+          owner_id: userId,
+          name: parsed.data.name,
+          search: filters.search,
+          kind: filters.kind,
+          study_year: filters.year,
+          programme: filters.programme,
+          sort: filters.sort,
+        })
+        .select(savedSearchSelect)
+        .single();
+      if (insertError || !data) {
+        setSavedSearchError(insertError?.code === "23505" ? "Vous avez déjà une recherche avec ce nom." : "La recherche n’a pas pu être enregistrée.");
+        return;
+      }
+      setSavedSearches((current) => [data as unknown as SavedResourceSearch, ...current]);
+      setSavedSearchName("");
+      setShowSaveSearchForm(false);
+    } finally {
+      setSavedSearchSaving(false);
+    }
+  }
+
+  async function deleteSavedSearch(savedSearch: SavedResourceSearch) {
+    if (savedSearchDeletingId) return;
+    if (!window.confirm(`Supprimer la recherche « ${savedSearch.name} » ?`)) return;
+    setSavedSearchDeletingId(savedSearch.id);
+    setSavedSearchError(null);
+    try {
+      const { error: deleteError } = await createClient()
+        .from("saved_resource_searches")
+        .delete()
+        .eq("id", savedSearch.id)
+        .eq("owner_id", userId);
+      if (deleteError) {
+        setSavedSearchError("La recherche n’a pas pu être supprimée.");
+        return;
+      }
+      setSavedSearches((current) => current.filter((item) => item.id !== savedSearch.id));
+    } finally {
+      setSavedSearchDeletingId(null);
+    }
+  }
+
   const visibleResources = useMemo(() => sortResources(resources, sort), [resources, sort]);
   const programmeOptions = useMemo(() => programme === "all" || availableProgrammes.includes(programme)
     ? availableProgrammes
     : [programme, ...availableProgrammes], [availableProgrammes, programme]);
-  const hasActiveFilters = Boolean(search.trim()) || kind !== "all" || year !== "all" || programme !== "all" || sort !== "recent";
+  const currentFilters = normalizeResourceFilters({ search, kind, year, programme, sort });
+  const hasActiveFilters = Boolean(buildResourceFilterQuery(currentFilters));
   const programmeCount = useMemo(() => new Set(visibleResources.map((resource) => resource.programme)).size, [visibleResources]);
   const displayName = profile?.display_name ?? email.split("@")[0] ?? "Étudiant";
   const profileCompletion = getProfileCompletion(profile);
@@ -220,6 +338,43 @@ export function Dashboard({ email, profile, userId, isMaintainer, initialFilters
             </select>
             {hasActiveFilters ? <button className="filter-reset" onClick={() => { setSearch(""); setKind("all"); setYear("all"); setProgramme("all"); setSort("recent"); }} type="button">Réinitialiser</button> : null}
           </div>
+
+          <section className="saved-search-panel" aria-labelledby="saved-searches-title">
+            <div className="saved-search-header">
+              <div>
+                <span className="eyebrow" id="saved-searches-title"><BookmarkPlus size={13} style={{ verticalAlign: "-2px", marginRight: "5px" }} /> Mes recherches</span>
+                <p>Gardez un filtre sous la main pour vos prochaines révisions.</p>
+              </div>
+              {hasActiveFilters && !savedSearchesError ? <button className="button button-secondary button-small" onClick={() => { setShowSaveSearchForm((value) => !value); setSavedSearchError(null); }} type="button"><BookmarkPlus size={15} /> {showSaveSearchForm ? "Fermer" : "Enregistrer ces filtres"}</button> : null}
+            </div>
+            {savedSearchesError ? <p className="field-hint" role="status">{savedSearchesError} Appliquez la migration `20260812090000_saved_searches.sql` pour activer cette fonction.</p> : null}
+            {showSaveSearchForm ? (
+              <form className="saved-search-form" onSubmit={(event) => void saveCurrentSearch(event)}>
+                <label className="field" htmlFor="savedSearchName"><span>Nom de la recherche</span><input id="savedSearchName" autoFocus maxLength={60} value={savedSearchName} onChange={(event) => setSavedSearchName(event.target.value)} placeholder="Ex. Annales de probabilités" /></label>
+                <div className="inline-actions saved-search-form-actions">
+                  {savedSearchError ? <span className="field-error" role="alert">{savedSearchError}</span> : null}
+                  <button className="button button-quiet button-small" onClick={() => { setShowSaveSearchForm(false); setSavedSearchError(null); }} type="button">Annuler</button>
+                  <button className="button button-primary button-small" disabled={savedSearchSaving} type="submit">{savedSearchSaving ? <LoaderCircle className="spin" size={15} /> : <BookmarkPlus size={15} />} {savedSearchSaving ? "Enregistrement…" : "Enregistrer"}</button>
+                </div>
+              </form>
+            ) : null}
+            {savedSearchError && !showSaveSearchForm ? <p className="form-error" role="alert">{savedSearchError}</p> : null}
+            {savedSearches.length > 0 ? (
+              <div className="saved-search-list" aria-label="Recherches enregistrées">
+                {savedSearches.map((savedSearch) => (
+                  <div className="saved-search-item" key={savedSearch.id}>
+                    <button className="saved-search-apply" onClick={() => applySavedSearch(savedSearch)} type="button">
+                      <strong>{savedSearch.name}</strong>
+                      <small>{describeSavedSearch(savedSearch)}</small>
+                    </button>
+                    <button className="saved-search-delete" aria-label={`Supprimer ${savedSearch.name}`} disabled={Boolean(savedSearchDeletingId)} onClick={() => void deleteSavedSearch(savedSearch)} type="button">
+                      {savedSearchDeletingId === savedSearch.id ? <LoaderCircle className="spin" size={14} /> : <Trash2 size={14} />}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : !savedSearchesError ? <p className="field-hint saved-search-empty">Aucune recherche enregistrée pour le moment.</p> : null}
+          </section>
 
           {loading ? (
             <div className="empty-state"><LoaderCircle className="spin" size={25} /><h3>On ouvre les casiers.</h3><p>Les ressources arrivent.</p></div>

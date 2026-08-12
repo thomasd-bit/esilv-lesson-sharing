@@ -14,6 +14,17 @@ export type ResourceOrder = { column: "created_at" | "like_count"; ascending: fa
 
 export const RESOURCE_PAGE_SIZE = 24;
 
+export function normalizeResourceFilters(filters: ResourceFilterState): ResourceFilterState {
+  const programme = filters.programme.trim().slice(0, 80);
+  return {
+    search: filters.search.trim().slice(0, 80),
+    kind: filters.kind,
+    year: filters.year,
+    programme: programme || "all",
+    sort: filters.sort,
+  };
+}
+
 export function parseResourceFilters(params: URLSearchParams): ResourceFilterState {
   const requestedKind = params.get("kind");
   const requestedYear = params.get("year");
@@ -30,14 +41,15 @@ export function parseResourceFilters(params: URLSearchParams): ResourceFilterSta
 }
 
 export function buildResourceFilterQuery(filters: ResourceFilterState) {
+  const normalized = normalizeResourceFilters(filters);
   const params = new URLSearchParams();
-  const search = filters.search.trim().slice(0, 80);
-  const programme = filters.programme.trim().slice(0, 80);
+  const search = normalized.search;
+  const programme = normalized.programme;
   if (search) params.set("q", search);
-  if (filters.kind !== "all") params.set("kind", filters.kind);
-  if (filters.year !== "all") params.set("year", filters.year);
+  if (normalized.kind !== "all") params.set("kind", normalized.kind);
+  if (normalized.year !== "all") params.set("year", normalized.year);
   if (programme && programme !== "all") params.set("programme", programme);
-  if (filters.sort !== "recent") params.set("sort", filters.sort);
+  if (normalized.sort !== "recent") params.set("sort", normalized.sort);
   return params.toString();
 }
 

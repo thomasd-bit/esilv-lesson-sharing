@@ -1,5 +1,12 @@
 # Journal des changements
 
+## [0.5.21] - 2026-08-12
+
+### Découverte
+
+- recherches du fil enregistrables sous un nom puis réapplicables depuis n’importe quelle session du même compte ;
+- filtres enregistrés dans une table privée protégée par RLS, avec suppression explicite depuis l’interface ;
+
 ## [0.5.20] - 2026-08-12
 
 ### Parcours étudiant

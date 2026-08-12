@@ -70,6 +70,19 @@ export interface ResourceCollectionItem {
   created_at: string;
 }
 
+export interface SavedResourceSearch {
+  id: string;
+  owner_id: string;
+  name: string;
+  search: string;
+  kind: "all" | ResourceKind;
+  study_year: "all" | StudyYear;
+  programme: string;
+  sort: "recent" | "popular";
+  created_at: string;
+  updated_at: string;
+}
+
 export type NotificationType = "like" | "comment";
 
 export interface AppNotification {
