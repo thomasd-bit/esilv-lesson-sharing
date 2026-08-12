@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { AppHeader } from "@/components/app-header";
 import { ModerationResourceAction } from "@/components/moderation-resource-action";
 import { formatDate, formatMetric } from "@/lib/format";
-import { hasModerationConfig, isMaintainerEmail, isReportStatus, REPORT_STATUS_LABELS } from "@/lib/moderation";
+import { getReportPageCount, getReportPageRange, hasModerationConfig, isMaintainerEmail, isReportStatus, REPORT_STATUS_LABELS } from "@/lib/moderation";
 import { createAdminClient, hasServiceRoleConfig } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { Profile, Resource, ResourceReport, ResourceReportStatus } from "@/lib/types";
@@ -27,7 +27,7 @@ type UsageStats = {
 
 export const dynamic = "force-dynamic";
 
-export default async function ModerationPage({ searchParams }: { searchParams: Promise<{ status?: string | string[] }> }) {
+export default async function ModerationPage({ searchParams }: { searchParams: Promise<{ status?: string | string[]; page?: string | string[] }> }) {
   if (!hasServiceRoleConfig()) {
     return <ModerationConfigurationPage />;
   }
@@ -55,13 +55,29 @@ export default async function ModerationPage({ searchParams }: { searchParams: P
     </ModerationShell>;
   }
 
+  const query = await searchParams;
+  const requestedFilter = Array.isArray(query.status) ? query.status[0] : query.status;
+  const filter: StatusFilter = requestedFilter === "all" || (requestedFilter && isReportStatus(requestedFilter))
+    ? requestedFilter as StatusFilter
+    : "open";
+  const requestedPage = Array.isArray(query.page) ? query.page[0] : query.page;
+  const parsedPage = Number.parseInt(requestedPage ?? "1", 10);
+  const page = Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+  const pageRange = getReportPageRange(page);
   const adminClient = createAdminClient();
-  const [reportsResult, accountsResult, resourcesResult, likesResult, commentsResult] = await Promise.all([
-    adminClient
-      .from("resource_reports")
-      .select("id, resource_id, reporter_id, reason, status, created_at")
-      .order("created_at", { ascending: false })
-      .limit(100),
+  let reportsQuery = adminClient
+    .from("resource_reports")
+    .select("id, resource_id, reporter_id, reason, status, created_at", { count: "exact" })
+    .order("created_at", { ascending: false });
+  if (filter !== "all") reportsQuery = reportsQuery.eq("status", filter);
+  reportsQuery = reportsQuery.range(pageRange.from, pageRange.to);
+
+  const [reportsResult, allReportsCountResult, openReportsCountResult, reviewedReportsCountResult, closedReportsCountResult, accountsResult, resourcesResult, likesResult, commentsResult] = await Promise.all([
+    reportsQuery,
+    adminClient.from("resource_reports").select("id", { count: "exact", head: true }),
+    adminClient.from("resource_reports").select("id", { count: "exact", head: true }).eq("status", "open"),
+    adminClient.from("resource_reports").select("id", { count: "exact", head: true }).eq("status", "reviewed"),
+    adminClient.from("resource_reports").select("id", { count: "exact", head: true }).eq("status", "closed"),
     adminClient.from("profiles").select("id", { count: "exact", head: true }),
     adminClient.from("resources").select("id", { count: "exact", head: true }).eq("status", "published"),
     adminClient.from("resource_likes").select("resource_id", { count: "exact", head: true }),
@@ -79,6 +95,12 @@ export default async function ModerationPage({ searchParams }: { searchParams: P
     publishedResources: resourcesResult.error ? null : resourcesResult.count ?? 0,
     likes: likesResult.error ? null : likesResult.count ?? 0,
     comments: commentsResult.error ? null : commentsResult.count ?? 0,
+  };
+  const counts = {
+    all: allReportsCountResult.error ? null : allReportsCountResult.count ?? 0,
+    open: openReportsCountResult.error ? null : openReportsCountResult.count ?? 0,
+    reviewed: reviewedReportsCountResult.error ? null : reviewedReportsCountResult.count ?? 0,
+    closed: closedReportsCountResult.error ? null : closedReportsCountResult.count ?? 0,
   };
   const reports = (reportsResult.data ?? []) as ResourceReport[];
   const resourceIds = [...new Set(reports.map((report) => report.resource_id))];
@@ -108,24 +130,14 @@ export default async function ModerationPage({ searchParams }: { searchParams: P
     };
   });
 
-  const query = await searchParams;
-  const requestedFilter = Array.isArray(query.status) ? query.status[0] : query.status;
-  const filter: StatusFilter = requestedFilter === "all" || (requestedFilter && isReportStatus(requestedFilter))
-    ? requestedFilter as StatusFilter
-    : "open";
-  const counts = {
-    all: reportViews.length,
-    open: reportViews.filter((report) => report.status === "open").length,
-    reviewed: reportViews.filter((report) => report.status === "reviewed").length,
-    closed: reportViews.filter((report) => report.status === "closed").length,
-  };
-  const visibleReports = filter === "all" ? reportViews : reportViews.filter((report) => report.status === filter);
+  const totalPages = getReportPageCount(reportsResult.count ?? reports.length);
+  const visibleReports = reportViews;
 
   return <ModerationShell displayName={displayName} email={user.email ?? ""} userId={user.id}>
     <section className="stats-grid moderation-stats" aria-label="Résumé des signalements">
-      <div className="stat-card"><span className="stat-value">{counts.open}</span><span className="stat-label">à traiter</span></div>
-      <div className="stat-card"><span className="stat-value">{counts.reviewed}</span><span className="stat-label">traités</span></div>
-      <div className="stat-card"><span className="stat-value">{counts.closed}</span><span className="stat-label">fermés</span></div>
+      <div className="stat-card"><span className="stat-value">{formatMetric(counts.open)}</span><span className="stat-label">à traiter</span></div>
+      <div className="stat-card"><span className="stat-value">{formatMetric(counts.reviewed)}</span><span className="stat-label">traités</span></div>
+      <div className="stat-card"><span className="stat-value">{formatMetric(counts.closed)}</span><span className="stat-label">fermés</span></div>
     </section>
 
     <section className="moderation-panel moderation-usage-panel" aria-labelledby="moderation-usage-title">
@@ -152,7 +164,7 @@ export default async function ModerationPage({ searchParams }: { searchParams: P
           <h2 id="moderation-list-title">Les signalements récents</h2>
         </div>
         <nav className="moderation-filters" aria-label="Filtrer les signalements">
-          {(["open", "reviewed", "closed", "all"] as const).map((status) => <Link className={`moderation-filter ${filter === status ? "moderation-filter-active" : ""}`} href={`/moderation?status=${status}`} key={status}>{status === "all" ? "Tous" : REPORT_STATUS_LABELS[status]} <span>{counts[status]}</span></Link>)}
+          {(["open", "reviewed", "closed", "all"] as const).map((status) => <Link className={`moderation-filter ${filter === status ? "moderation-filter-active" : ""}`} href={`/moderation?status=${status}&page=1`} key={status}>{status === "all" ? "Tous" : REPORT_STATUS_LABELS[status]} <span>{formatMetric(counts[status])}</span></Link>)}
         </nav>
       </div>
 
@@ -163,6 +175,7 @@ export default async function ModerationPage({ searchParams }: { searchParams: P
           {visibleReports.map((report) => <ReportCard key={report.id} report={report} />)}
         </div>
       )}
+      <ReportPagination page={page} totalPages={totalPages} filter={filter} />
     </section>
   </ModerationShell>;
 }
@@ -215,4 +228,16 @@ function ReportCard({ report }: { report: ReportView }) {
 
 function StatusAction({ reportId, status, children }: { reportId: string; status: ResourceReportStatus; children: React.ReactNode }) {
   return <form action={updateReportStatus}><input type="hidden" name="reportId" value={reportId} /><input type="hidden" name="status" value={status} /><button className="button button-secondary button-small" type="submit">{children}</button></form>;
+}
+
+function ReportPagination({ page, totalPages, filter }: { page: number; totalPages: number; filter: StatusFilter }) {
+  if (totalPages <= 1) return null;
+
+  const hrefFor = (targetPage: number) => `/moderation?status=${filter}&page=${targetPage}`;
+
+  return <nav className="moderation-pagination" aria-label="Pages de signalements">
+    {page > 1 ? <Link className="button button-secondary button-small" href={hrefFor(page - 1)}>← Précédents</Link> : <span aria-hidden="true" />}
+    <span aria-live="polite">Page {page} sur {totalPages}</span>
+    {page < totalPages ? <Link className="button button-secondary button-small" href={hrefFor(page + 1)}>Suivants →</Link> : <span aria-hidden="true" />}
+  </nav>;
 }

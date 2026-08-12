@@ -1,5 +1,11 @@
 # Journal des changements
 
+## [0.5.8] - 2026-08-12
+
+### Mainteneur
+
+- file de signalements paginée par 50 éléments avec des compteurs exacts par état pour ne plus masquer les signalements au-delà des 100 premiers ;
+
 ## [0.5.7] - 2026-08-12
 
 ### Mainteneur

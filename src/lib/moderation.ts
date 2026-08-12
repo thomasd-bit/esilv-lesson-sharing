@@ -2,6 +2,8 @@ import type { ResourceReportStatus } from "@/lib/types";
 
 export type ResourceVisibility = "published" | "hidden";
 
+export const REPORT_PAGE_SIZE = 50;
+
 export const REPORT_STATUS_LABELS: Record<ResourceReportStatus, string> = {
   open: "À traiter",
   reviewed: "Traité",
@@ -26,6 +28,18 @@ export function isReportStatus(value: string): value is ResourceReportStatus {
 
 export function isResourceVisibility(value: string): value is ResourceVisibility {
   return value === "published" || value === "hidden";
+}
+
+export function getReportPageRange(page: number, pageSize = REPORT_PAGE_SIZE) {
+  const safePage = Math.max(1, Math.floor(page));
+  const safePageSize = Math.max(1, Math.floor(pageSize));
+  const from = (safePage - 1) * safePageSize;
+  return { from, to: from + safePageSize - 1 };
+}
+
+export function getReportPageCount(total: number, pageSize = REPORT_PAGE_SIZE) {
+  const safePageSize = Math.max(1, Math.floor(pageSize));
+  return Math.max(1, Math.ceil(Math.max(0, total) / safePageSize));
 }
 
 export function hasModerationConfig() {
