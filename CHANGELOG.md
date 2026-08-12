@@ -1,5 +1,11 @@
 # Journal des changements
 
+## [0.5.16] - 2026-08-12
+
+### Parcours étudiant
+
+- renvoi de l’e-mail de confirmation directement après l’inscription lorsqu’un étudiant n’a pas encore validé son adresse ;
+
 ## [0.5.15] - 2026-08-12
 
 ### Mainteneur
