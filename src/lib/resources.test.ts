@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getProgrammeOptions, getResourceActionErrorMessage, getResourceOrder, getResourcePageRange, hasMoreResourcePage, RESOURCE_PAGE_SIZE, sortResources } from "@/lib/resources";
+import { buildResourceFilterQuery, getProgrammeOptions, getResourceActionErrorMessage, getResourceOrder, getResourcePageRange, hasMoreResourcePage, parseResourceFilters, RESOURCE_PAGE_SIZE, sortResources } from "@/lib/resources";
 import type { ResourceWithAuthor } from "@/lib/types";
 
 const baseResource = {
@@ -78,5 +78,19 @@ describe("retours d’action sur une ressource", () => {
 
     expect(messages.every((message) => message.length > 0)).toBe(true);
     expect(new Set(messages).size).toBe(actions.length);
+  });
+});
+
+describe("filtres partageables du fil", () => {
+  it("restaure uniquement les valeurs de filtre reconnues depuis l’URL", () => {
+    const filters = parseResourceFilters(new URLSearchParams("q= probabilités &kind=exam&year=3A&programme=Cycle%20ing%C3%A9nieur&sort=popular"));
+
+    expect(filters).toEqual({ search: "probabilités", kind: "exam", year: "3A", programme: "Cycle ingénieur", sort: "popular" });
+    expect(parseResourceFilters(new URLSearchParams("kind=unknown&year=9A&sort=old"))).toEqual({ search: "", kind: "all", year: "all", programme: "all", sort: "recent" });
+  });
+
+  it("ne met dans l’URL que les filtres actifs", () => {
+    expect(buildResourceFilterQuery({ search: " maths ", kind: "all", year: "all", programme: "all", sort: "recent" })).toBe("q=maths");
+    expect(buildResourceFilterQuery({ search: "", kind: "summary", year: "2A", programme: "IIM", sort: "popular" })).toBe("kind=summary&year=2A&programme=IIM&sort=popular");
   });
 });

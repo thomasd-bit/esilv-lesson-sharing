@@ -1,11 +1,45 @@
-import type { ResourceWithAuthor } from "@/lib/types";
+import { RESOURCE_KINDS, STUDY_YEARS, type ResourceKind, type ResourceWithAuthor, type StudyYear } from "@/lib/types";
 
 export type ResourceSort = "recent" | "popular";
 export type ResourceAction = "like" | "save" | "file" | "delete";
+export type ResourceFilterState = {
+  search: string;
+  kind: "all" | ResourceKind;
+  year: "all" | StudyYear;
+  programme: string;
+  sort: ResourceSort;
+};
 
 export type ResourceOrder = { column: "created_at" | "like_count"; ascending: false };
 
 export const RESOURCE_PAGE_SIZE = 24;
+
+export function parseResourceFilters(params: URLSearchParams): ResourceFilterState {
+  const requestedKind = params.get("kind");
+  const requestedYear = params.get("year");
+  const requestedSort = params.get("sort");
+  const programme = params.get("programme")?.trim().slice(0, 80) ?? "";
+
+  return {
+    search: params.get("q")?.trim().slice(0, 80) ?? "",
+    kind: RESOURCE_KINDS.some(({ value }) => value === requestedKind) ? requestedKind as ResourceKind : "all",
+    year: STUDY_YEARS.includes(requestedYear as StudyYear) ? requestedYear as StudyYear : "all",
+    programme: programme || "all",
+    sort: requestedSort === "popular" ? "popular" : "recent",
+  };
+}
+
+export function buildResourceFilterQuery(filters: ResourceFilterState) {
+  const params = new URLSearchParams();
+  const search = filters.search.trim().slice(0, 80);
+  const programme = filters.programme.trim().slice(0, 80);
+  if (search) params.set("q", search);
+  if (filters.kind !== "all") params.set("kind", filters.kind);
+  if (filters.year !== "all") params.set("year", filters.year);
+  if (programme && programme !== "all") params.set("programme", programme);
+  if (filters.sort !== "recent") params.set("sort", filters.sort);
+  return params.toString();
+}
 
 export function getResourceActionErrorMessage(action: ResourceAction) {
   const messages: Record<ResourceAction, string> = {

@@ -8,7 +8,7 @@ import { ResourceCard } from "@/components/resource-card";
 import { createClient } from "@/lib/supabase/client";
 import { appConfig } from "@/lib/config";
 import { getProfileCompletion } from "@/lib/profile";
-import { getProgrammeOptions, getResourceOrder, getResourcePageRange, hasMoreResourcePage, RESOURCE_PAGE_SIZE, sortResources, type ResourceSort } from "@/lib/resources";
+import { buildResourceFilterQuery, getProgrammeOptions, getResourceOrder, getResourcePageRange, hasMoreResourcePage, RESOURCE_PAGE_SIZE, sortResources, type ResourceFilterState, type ResourceSort } from "@/lib/resources";
 import { RESOURCE_KINDS, STUDY_YEARS, type Profile, type Resource, type ResourceKind, type ResourceWithAuthor, type StudyYear } from "@/lib/types";
 
 type DashboardProps = {
@@ -16,17 +16,18 @@ type DashboardProps = {
   profile: Profile | null;
   userId: string;
   isMaintainer: boolean;
+  initialFilters: ResourceFilterState;
 };
 
-export function Dashboard({ email, profile, userId, isMaintainer }: DashboardProps) {
+export function Dashboard({ email, profile, userId, isMaintainer, initialFilters }: DashboardProps) {
   const [resources, setResources] = useState<ResourceWithAuthor[]>([]);
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [kind, setKind] = useState<"all" | ResourceKind>("all");
-  const [year, setYear] = useState<"all" | StudyYear>("all");
-  const [programme, setProgramme] = useState("all");
+  const [search, setSearch] = useState(initialFilters.search);
+  const [debouncedSearch, setDebouncedSearch] = useState(initialFilters.search);
+  const [kind, setKind] = useState<"all" | ResourceKind>(initialFilters.kind);
+  const [year, setYear] = useState<"all" | StudyYear>(initialFilters.year);
+  const [programme, setProgramme] = useState(initialFilters.programme);
   const [availableProgrammes, setAvailableProgrammes] = useState<string[]>([]);
-  const [sort, setSort] = useState<ResourceSort>("recent");
+  const [sort, setSort] = useState<ResourceSort>(initialFilters.sort);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
@@ -37,6 +38,13 @@ export function Dashboard({ email, profile, userId, isMaintainer }: DashboardPro
     const timeout = window.setTimeout(() => setDebouncedSearch(search.trim()), 250);
     return () => window.clearTimeout(timeout);
   }, [search]);
+
+  useEffect(() => {
+    const query = buildResourceFilterQuery({ search: debouncedSearch, kind, year, programme, sort });
+    const nextUrl = query ? `/?${query}` : "/";
+    const currentUrl = `${window.location.pathname}${window.location.search}`;
+    if (currentUrl !== nextUrl) window.history.replaceState(window.history.state, "", nextUrl);
+  }, [debouncedSearch, kind, programme, sort, year]);
 
   const loadPage = useCallback(async (offset: number) => {
     const supabase = createClient();
