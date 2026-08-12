@@ -46,6 +46,8 @@ NEXT_PUBLIC_ALLOWED_EMAIL_DOMAINS=devinci.fr,edu.devinci.fr,ext.devinci.fr,esilv
 
 Les migrations créent les tables de profils, ressources, likes, sauvegardes, commentaires, signalements, collections privées et notifications, ainsi qu’une liste de domaines autorisés pour l’inscription. Chaque étudiant reçoit automatiquement une collection « À lire ». Un like ou un commentaire crée une notification côté base pour l’auteur de la ressource, sans notification pour ses propres actions. Les années d’étude acceptées sont `1A`, `2A`, `3A`, `4A`, `5A` et `Autre`; la contrainte SQL est ajoutée `not valid` pour ne pas bloquer une base qui contiendrait déjà une ancienne valeur à nettoyer. Elles activent RLS sur chaque table et créent le bucket privé `resource-files`. La clé secrète Supabase ne doit jamais être mise dans le navigateur ni dans Git.
 
+Dans Storage, gardez `resource-files` privé et configurez une limite de 10 Mo ainsi que les types MIME correspondant aux PDF, images PNG/JPEG/WebP, documents Word, présentations PowerPoint, tableurs Excel et archives ZIP. L’interface applique la même règle avant l’envoi, mais la restriction du bucket Supabase doit rester le contrôle effectif pour les requêtes qui contournent le navigateur.
+
 ## Vérifier le projet
 
 ```bash

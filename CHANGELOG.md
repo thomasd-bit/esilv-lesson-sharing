@@ -6,6 +6,7 @@
 
 - récupération de compte par e-mail et changement de mot de passe depuis un lien sécurisé ;
 - modification ou suppression de ses propres commentaires depuis une fiche ressource, avec indication des commentaires modifiés ;
+- validation cohérente des fichiers partagés (taille maximale et formats autorisés) avant l’envoi ;
 
 ### Sécurité
 

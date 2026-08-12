@@ -4,11 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FileUp, LoaderCircle, Send } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { resourceFileError, RESOURCE_FILE_ACCEPT } from "@/lib/files";
 import { firstValidationError, resourceSchema } from "@/lib/validation";
 import { RESOURCE_KINDS, STUDY_YEARS } from "@/lib/types";
-
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
-const ACCEPTED_FILE_TYPES = ".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip";
 
 function safeFileName(name: string) {
   return name
@@ -54,10 +52,13 @@ export function ResourceForm({ initialProgramme, initialStudyYear }: { initialPr
       setPending(false);
       return;
     }
-    if (file && file.size > MAX_FILE_SIZE) {
-      setError("Le fichier ne doit pas dépasser 10 Mo.");
-      setPending(false);
-      return;
+    if (file) {
+      const fileError = resourceFileError(file);
+      if (fileError) {
+        setError(fileError);
+        setPending(false);
+        return;
+      }
     }
 
     const supabase = createClient();
@@ -151,7 +152,7 @@ export function ResourceForm({ initialProgramme, initialStudyYear }: { initialPr
           <div className="file-drop">
             <FileUp size={22} aria-hidden="true" />
             <span>{selectedFile ?? "PDF, image, document ou archive — 10 Mo maximum"}</span>
-            <input id="file" name="file" type="file" accept={ACCEPTED_FILE_TYPES} onChange={(event) => setSelectedFile(event.target.files?.[0]?.name ?? null)} />
+            <input id="file" name="file" type="file" accept={RESOURCE_FILE_ACCEPT} onChange={(event) => setSelectedFile(event.target.files?.[0]?.name ?? null)} />
           </div>
         </div>
       </div>
