@@ -20,6 +20,7 @@
 - snapshot d’adoption documenté avec définitions de métriques et formulaire public de feedback étudiant ;
 - appel public aux retours étudiants ouvert sur GitHub, sans fabriquer de témoignages ni de métriques d’usage ;
 - CI déclenchable manuellement et exécutée aussi sur les pull requests vers la branche de travail `codex/**` ;
+- configuration Dependabot ajoutée pour surveiller npm chaque semaine et les GitHub Actions chaque mois ;
 
 ### Sécurité
 
