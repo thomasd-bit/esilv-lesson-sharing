@@ -12,12 +12,12 @@ Source : [API publique du dépôt](https://api.github.com/repos/thomasd-bit/esil
 | Forks | 0 | aucun fork public observé ; |
 | Issues ouvertes | 1 (`#2`) | un appel public aux retours est en attente, sans réponse à cette date ; |
 | Contributeurs listés | 1 | le projet n’a pas encore de contribution externe vérifiable ; |
-| Releases publiées | 28 (`v0.1.0`, `v0.4.0`, `v0.4.1`, `v0.5.0`, `v0.5.1`, `v0.5.2`, `v0.5.3`, `v0.5.4`, `v0.5.5`, `v0.5.6`, `v0.5.7`, `v0.5.8`, `v0.5.9`, `v0.5.10`, `v0.5.11`, `v0.5.12`, `v0.5.13`, `v0.5.14`, `v0.5.15`, `v0.5.16`, `v0.5.17`, `v0.5.18`, `v0.5.19`, `v0.5.20`, `v0.5.21`, `v0.5.22`, `v0.5.23`, `v0.5.24`) | vingt-huit versions publiques et documentées ; |
+| Releases publiées | 29 (`v0.1.0`, `v0.4.0`, `v0.4.1`, `v0.5.0`, `v0.5.1`, `v0.5.2`, `v0.5.3`, `v0.5.4`, `v0.5.5`, `v0.5.6`, `v0.5.7`, `v0.5.8`, `v0.5.9`, `v0.5.10`, `v0.5.11`, `v0.5.12`, `v0.5.13`, `v0.5.14`, `v0.5.15`, `v0.5.16`, `v0.5.17`, `v0.5.18`, `v0.5.19`, `v0.5.20`, `v0.5.21`, `v0.5.22`, `v0.5.23`, `v0.5.24`, `v0.5.25`) | vingt-neuf versions publiques et documentées ; |
 | Assets de release téléchargeables | 0 | l’application est publiée comme code source, pas comme binaire ; |
 | Téléchargements de release | non disponible | aucun compteur d’asset à interpréter ; |
 | Dépendants GitHub | non disponible | le dépôt n’est pas une dépendance packagée. |
 
-Le dépôt expose aussi la [PR initiale fusionnée](https://github.com/thomasd-bit/esilv-lesson-sharing/pull/1), la [release `v0.5.23`](https://github.com/thomasd-bit/esilv-lesson-sharing/releases/tag/v0.5.23) et la [release `v0.5.24`](https://github.com/thomasd-bit/esilv-lesson-sharing/releases/tag/v0.5.24). Ces éléments prouvent une activité de maintenance, pas encore une adoption par la promo.
+Le dépôt expose aussi la [PR initiale fusionnée](https://github.com/thomasd-bit/esilv-lesson-sharing/pull/1), la [release `v0.5.24`](https://github.com/thomasd-bit/esilv-lesson-sharing/releases/tag/v0.5.24) et la [release `v0.5.25`](https://github.com/thomasd-bit/esilv-lesson-sharing/releases/tag/v0.5.25). Ces éléments prouvent une activité de maintenance, pas encore une adoption par la promo.
 
 ## Mesures produit à suivre dès qu’un environnement est utilisé
 
