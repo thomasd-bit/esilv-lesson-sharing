@@ -7,6 +7,11 @@
 - file privée de modération pour consulter les signalements récents et les faire passer de « à traiter » à « traité » ou « fermé » ;
 - accès à la modération limité aux adresses configurées côté serveur, sans exposer la clé de service dans le navigateur ;
 
+### Parcours étudiant
+
+- présentation courte dans le profil et page membre consultable depuis une ressource ;
+- ressources publiées regroupées sur chaque profil pour faciliter la confiance et la découverte entre étudiants ;
+
 ## [0.4.1] - 2026-08-12
 
 ### Sécurité

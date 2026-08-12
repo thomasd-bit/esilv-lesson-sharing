@@ -72,7 +72,7 @@ export function Dashboard({ email, profile, userId, isMaintainer }: DashboardPro
       const resourceIds = rows.map((resource) => resource.id);
       const [{ data: profiles }, { data: likes }] = await Promise.all([
         authorIds.length
-          ? supabase.from("profiles").select("id, display_name, programme, study_year, avatar_url, created_at").in("id", authorIds)
+          ? supabase.from("profiles").select("id, display_name, programme, study_year, bio, avatar_url, created_at").in("id", authorIds)
           : Promise.resolve({ data: [] }),
         resourceIds.length
           ? supabase.from("resource_likes").select("resource_id").in("resource_id", resourceIds)

@@ -48,7 +48,7 @@ export function NotificationsList({ userId }: { userId: string }) {
       const resourceIds = [...new Set(rows.flatMap((notification) => notification.resource_id ? [notification.resource_id] : []))];
       const [{ data: profiles }, { data: resources }] = await Promise.all([
         actorIds.length
-          ? supabase.from("profiles").select("id, display_name, programme, study_year, avatar_url, created_at").in("id", actorIds)
+          ? supabase.from("profiles").select("id, display_name, programme, study_year, bio, avatar_url, created_at").in("id", actorIds)
           : Promise.resolve({ data: [] }),
         resourceIds.length
           ? supabase.from("resources").select("id, title").in("id", resourceIds)

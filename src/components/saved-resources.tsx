@@ -79,7 +79,7 @@ export function SavedResources({ userId }: { userId: string }) {
       const rows = (rawResources ?? []) as unknown as Resource[];
       const authorIds = [...new Set(rows.map((resource) => resource.author_id))];
       const { data: rawProfiles } = authorIds.length
-        ? await supabase.from("profiles").select("id, display_name, programme, study_year, avatar_url, created_at").in("id", authorIds)
+        ? await supabase.from("profiles").select("id, display_name, programme, study_year, bio, avatar_url, created_at").in("id", authorIds)
         : { data: [] };
       const profiles = (rawProfiles ?? []) as unknown as Profile[];
       const profileById = new Map(profiles.map((profile) => [profile.id, profile]));

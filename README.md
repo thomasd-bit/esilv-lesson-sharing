@@ -43,7 +43,7 @@ MAINTAINER_EMAILS=maintainer@ecole.fr
 ## Préparer Supabase
 
 1. Créez un projet Supabase.
-2. Dans l’éditeur SQL, exécutez les migrations dans l’ordre : `20260811000000_initial_schema.sql`, `20260811010000_school_email_guard.sql`, `20260812000000_collections.sql`, `20260812010000_notifications.sql`, `20260812020000_study_year_integrity.sql`, puis `20260812030000_report_deduplication.sql`.
+2. Dans l’éditeur SQL, exécutez les migrations dans l’ordre : `20260811000000_initial_schema.sql`, `20260811010000_school_email_guard.sql`, `20260812000000_collections.sql`, `20260812010000_notifications.sql`, `20260812020000_study_year_integrity.sql`, `20260812030000_report_deduplication.sql`, puis `20260812040000_profile_bio.sql`.
 3. Dans Authentication → URL Configuration, ajoutez `http://localhost:3000/auth/callback` aux Redirect URLs.
 4. Dans Authentication → Providers → Email, choisissez si les nouveaux comptes doivent confirmer leur adresse. En production, gardez la confirmation activée. Ajoutez aussi l’URL de callback de récupération si votre configuration Supabase utilise une liste stricte de Redirect URLs.
 5. Copiez l’URL du projet et sa publishable key dans `.env.local`.
@@ -76,6 +76,7 @@ src/app/                 Routes et pages Next.js
 src/components/          Parcours auth, fil, formulaires et fiche ressource
 src/lib/                 Configuration, validation, formatage, modération et clients Supabase
 src/app/moderation/      File privée de suivi des signalements
+src/app/members/         Profils publics et ressources d’un étudiant
 supabase/migrations/     Schéma SQL et politiques RLS
 docs/                     Mesure d’adoption et boucle de feedback
 ```

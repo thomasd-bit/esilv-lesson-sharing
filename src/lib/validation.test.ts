@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { collectionSchema, passwordResetSchema, resourceSchema, signInSchema, signUpSchema } from "@/lib/validation";
+import { collectionSchema, passwordResetSchema, profileSchema, resourceSchema, signInSchema, signUpSchema } from "@/lib/validation";
 
 describe("validation des comptes", () => {
   it("accepte une inscription complète", () => {
@@ -74,6 +74,28 @@ describe("validation des collections", () => {
 
   it("refuse un nom de collection trop court", () => {
     const result = collectionSchema.safeParse({ name: "A", description: "" });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("validation des profils", () => {
+  it("accepte une courte présentation", () => {
+    const result = profileSchema.safeParse({
+      displayName: "Camille Martin",
+      programme: "Cycle ingénieur",
+      studyYear: "3A",
+      bio: "Je partage surtout mes fiches de probabilités et mes retours de projet.",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("refuse une présentation trop longue", () => {
+    const result = profileSchema.safeParse({
+      displayName: "Camille Martin",
+      programme: "Cycle ingénieur",
+      studyYear: "3A",
+      bio: "x".repeat(281),
+    });
     expect(result.success).toBe(false);
   });
 });

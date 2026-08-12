@@ -35,6 +35,13 @@ export const signUpSchema = signInSchema.extend({
   studyYear: studyYearSchema,
 });
 
+export const profileSchema = z.object({
+  displayName: signUpSchema.shape.displayName,
+  programme: signUpSchema.shape.programme,
+  studyYear: studyYearSchema,
+  bio: z.string().trim().max(280, "La présentation ne doit pas dépasser 280 caractères."),
+});
+
 export const resourceSchema = z.object({
   title: z.string().trim().min(5, "Le titre doit faire au moins 5 caractères.").max(120),
   description: z

@@ -14,7 +14,7 @@ export default async function NotificationsPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth");
-  const { data: profile } = await supabase.from("profiles").select("id, display_name, programme, study_year, avatar_url, created_at").eq("id", user.id).maybeSingle();
+  const { data: profile } = await supabase.from("profiles").select("id, display_name, programme, study_year, bio, avatar_url, created_at").eq("id", user.id).maybeSingle();
   const typedProfile = profile as Profile | null;
   const displayName = typedProfile?.display_name ?? user.email?.split("@")[0] ?? "Étudiant";
 

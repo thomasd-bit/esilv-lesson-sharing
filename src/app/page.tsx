@@ -22,7 +22,7 @@ export default async function HomePage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, display_name, programme, study_year, avatar_url, created_at")
+    .select("id, display_name, programme, study_year, bio, avatar_url, created_at")
     .eq("id", user.id)
     .maybeSingle();
 

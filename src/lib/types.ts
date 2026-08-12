@@ -7,6 +7,7 @@ export interface Profile {
   display_name: string;
   programme: string | null;
   study_year: StudyYear | null;
+  bio: string | null;
   avatar_url: string | null;
   created_at: string;
 }

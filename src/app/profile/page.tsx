@@ -13,7 +13,7 @@ export default async function ProfilePage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth");
-  const { data: profile } = await supabase.from("profiles").select("id, display_name, programme, study_year, avatar_url, created_at").eq("id", user.id).maybeSingle();
+  const { data: profile } = await supabase.from("profiles").select("id, display_name, programme, study_year, bio, avatar_url, created_at").eq("id", user.id).maybeSingle();
 
   return (
     <div className="app-page">
@@ -26,7 +26,7 @@ export default async function ProfilePage() {
           <div>
             <span className="eyebrow">Votre carte dans la communauté</span>
             <h1>Un profil simple, mais identifiable.</h1>
-            <p>Les autres étudiants voient votre nom affiché, votre formation et votre année. Votre adresse e-mail reste réservée à la connexion.</p>
+            <p>Les autres étudiants voient votre nom affiché, votre formation, votre année et la courte présentation que vous choisissez de publier. Votre adresse e-mail reste réservée à la connexion.</p>
           </div>
         </div>
         <div className="form-card profile-page-card">

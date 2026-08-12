@@ -46,7 +46,7 @@ export function ResourceDetail({ resource, author, currentUserId }: Props) {
       const commentRows = (rawComments ?? []) as Array<Omit<ResourceComment, "author">>;
       const authorIds = [...new Set(commentRows.map((comment) => comment.author_id))];
       const { data: profiles } = authorIds.length
-        ? await supabase.from("profiles").select("id, display_name, programme, study_year, avatar_url, created_at").in("id", authorIds)
+        ? await supabase.from("profiles").select("id, display_name, programme, study_year, bio, avatar_url, created_at").in("id", authorIds)
         : { data: [] };
       const profileRows = (profiles ?? []) as unknown as Profile[];
       const profileById = new Map(profileRows.map((profile) => [profile.id, profile]));
@@ -171,7 +171,7 @@ export function ResourceDetail({ resource, author, currentUserId }: Props) {
 
   function authorForCurrentUser(id: string): Profile | null {
     if (id !== currentUserId) return null;
-    return author?.id === currentUserId ? author : { id, display_name: "Vous", programme: null, study_year: null, avatar_url: null, created_at: new Date().toISOString() };
+    return author?.id === currentUserId ? author : { id, display_name: "Vous", programme: null, study_year: null, bio: null, avatar_url: null, created_at: new Date().toISOString() };
   }
 
   async function submitReport(event: React.FormEvent<HTMLFormElement>) {
@@ -255,10 +255,11 @@ export function ResourceDetail({ resource, author, currentUserId }: Props) {
 
       <aside className="side-card">
         <h2>À propos du partage</h2>
-        <div className="profile-card-top">
-          <span className="avatar">{initials(author?.display_name ?? "Étudiant")}</span>
-          <div><strong>{author?.display_name ?? "Étudiant"}</strong><small>{author?.programme ?? "Membre de la communauté"}</small></div>
-        </div>
+          <div className="profile-card-top">
+            <span className="avatar">{initials(author?.display_name ?? "Étudiant")}</span>
+            <div><strong>{author?.display_name ?? "Étudiant"}</strong><small>{author?.programme ?? "Membre de la communauté"}</small></div>
+          </div>
+          {author ? <Link className="member-profile-link" href={`/members/${author.id}`}>Voir le profil de cet étudiant</Link> : null}
         <ul className="side-list">
           <li><Check size={16} /> Ce support a été déposé volontairement par un étudiant.</li>
           <li><MessageCircle size={16} /> Ajoutez un retour si vous repérez une mise à jour utile.</li>

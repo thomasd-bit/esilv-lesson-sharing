@@ -31,7 +31,7 @@ export default async function ModerationPage({ searchParams }: { searchParams: P
 
   const { data: profile } = await sessionClient
     .from("profiles")
-    .select("id, display_name, programme, study_year, avatar_url, created_at")
+    .select("id, display_name, programme, study_year, bio, avatar_url, created_at")
     .eq("id", user.id)
     .maybeSingle();
   const typedProfile = profile as Profile | null;
@@ -68,14 +68,14 @@ export default async function ModerationPage({ searchParams }: { searchParams: P
       ? adminClient.from("resources").select("id, title, status, author_id, created_at").in("id", resourceIds)
       : Promise.resolve({ data: [] }),
     reporterIds.length
-      ? adminClient.from("profiles").select("id, display_name, programme, study_year, avatar_url, created_at").in("id", reporterIds)
+      ? adminClient.from("profiles").select("id, display_name, programme, study_year, bio, avatar_url, created_at").in("id", reporterIds)
       : Promise.resolve({ data: [] }),
   ]);
   const resourcesById = new Map(((rawResources ?? []) as ReportResource[]).map((resource) => [resource.id, resource]));
   const profilesById = new Map(((rawProfiles ?? []) as unknown as Profile[]).map((profileRow) => [profileRow.id, profileRow]));
   const authorIds = [...new Set((rawResources ?? []).map((resource) => (resource as ReportResource).author_id))];
   const { data: rawAuthors } = authorIds.length
-    ? await adminClient.from("profiles").select("id, display_name, programme, study_year, avatar_url, created_at").in("id", authorIds)
+    ? await adminClient.from("profiles").select("id, display_name, programme, study_year, bio, avatar_url, created_at").in("id", authorIds)
     : { data: [] };
   const authorsById = new Map(((rawAuthors ?? []) as unknown as Profile[]).map((author) => [author.id, author]));
   const reportViews: ReportView[] = reports.map((report) => {

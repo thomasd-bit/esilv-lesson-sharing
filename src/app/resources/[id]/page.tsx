@@ -25,7 +25,7 @@ export default async function ResourcePage({ params }: { params: Promise<{ id: s
 
   const { data: author } = await supabase
     .from("profiles")
-    .select("id, display_name, programme, study_year, avatar_url, created_at")
+    .select("id, display_name, programme, study_year, bio, avatar_url, created_at")
     .eq("id", resource.author_id)
     .maybeSingle();
 
