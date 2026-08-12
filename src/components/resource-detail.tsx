@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 import { Bookmark, Check, ExternalLink, FileDown, Flag, Heart, LoaderCircle, MessageCircle, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { formatDate, initials, wasEdited } from "@/lib/format";
+import { formatDate, formatMetric, initials, wasEdited } from "@/lib/format";
+import { COMMENT_PAGE_SIZE, getCommentRange, hasMoreCommentPage } from "@/lib/comments";
 import { reportSubmissionMessage } from "@/lib/reports";
 import { commentSchema, firstValidationError } from "@/lib/validation";
 import { RESOURCE_KIND_LABELS, type Profile, type Resource, type ResourceComment } from "@/lib/types";
@@ -16,12 +17,56 @@ type Props = {
   currentUserId: string;
 };
 
+type CommentPage = {
+  comments: ResourceComment[];
+  totalCount: number | null;
+  nextOffset: number;
+  hasMore: boolean;
+};
+
+const commentSelect = "id, resource_id, author_id, body, created_at, updated_at";
+
+async function fetchCommentPage(resourceId: string, offset: number): Promise<CommentPage> {
+  const supabase = createClient();
+  const { from, to } = getCommentRange(offset);
+  const { data: rawComments, error: commentsError, count: totalCount } = await supabase
+    .from("resource_comments")
+    .select(commentSelect, { count: "exact" })
+    .eq("resource_id", resourceId)
+    .order("created_at", { ascending: true })
+    .range(from, to);
+  if (commentsError) throw commentsError;
+
+  const commentRows = (rawComments ?? []) as Array<Omit<ResourceComment, "author">>;
+  const authorIds = [...new Set(commentRows.map((comment) => comment.author_id))];
+  const { data: profiles } = authorIds.length
+    ? await supabase.from("profiles").select("id, display_name, programme, study_year, bio, avatar_url, created_at").in("id", authorIds)
+    : { data: [] };
+  const profileRows = (profiles ?? []) as unknown as Profile[];
+  const profileById = new Map(profileRows.map((profile) => [profile.id, profile]));
+  const comments = commentRows.map((comment) => ({ ...comment, author: profileById.get(comment.author_id) ?? null }));
+
+  return {
+    comments,
+    totalCount: totalCount ?? null,
+    nextOffset: offset + comments.length,
+    hasMore: totalCount === null
+      ? hasMoreCommentPage(comments.length)
+      : offset + comments.length < totalCount,
+  };
+}
+
 export function ResourceDetail({ resource, author, currentUserId }: Props) {
   const router = useRouter();
   const [likeCount, setLikeCount] = useState(0);
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
   const [comments, setComments] = useState<ResourceComment[]>([]);
+  const [commentCount, setCommentCount] = useState<number | null>(null);
+  const [commentOffset, setCommentOffset] = useState(0);
+  const [hasMoreComments, setHasMoreComments] = useState(false);
+  const [loadingMoreComments, setLoadingMoreComments] = useState(false);
+  const [commentsLoadError, setCommentsLoadError] = useState<string | null>(null);
   const [commentBody, setCommentBody] = useState("");
   const [commentError, setCommentError] = useState<string | null>(null);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
@@ -37,24 +82,25 @@ export function ResourceDetail({ resource, author, currentUserId }: Props) {
     let active = true;
     async function loadSocialData() {
       const supabase = createClient();
-      const [{ count }, { data: ownLike }, { data: ownSave }, { data: rawComments }] = await Promise.all([
+      const [{ count }, { data: ownLike }, { data: ownSave }, commentsResult] = await Promise.all([
         supabase.from("resource_likes").select("resource_id", { count: "exact", head: true }).eq("resource_id", resource.id),
         supabase.from("resource_likes").select("resource_id").eq("resource_id", resource.id).eq("user_id", currentUserId).maybeSingle(),
         supabase.from("resource_saves").select("resource_id").eq("resource_id", resource.id).eq("user_id", currentUserId).maybeSingle(),
-        supabase.from("resource_comments").select("id, resource_id, author_id, body, created_at, updated_at").eq("resource_id", resource.id).order("created_at", { ascending: true }),
+        fetchCommentPage(resource.id, 0).catch(() => null),
       ]);
-      const commentRows = (rawComments ?? []) as Array<Omit<ResourceComment, "author">>;
-      const authorIds = [...new Set(commentRows.map((comment) => comment.author_id))];
-      const { data: profiles } = authorIds.length
-        ? await supabase.from("profiles").select("id, display_name, programme, study_year, bio, avatar_url, created_at").in("id", authorIds)
-        : { data: [] };
-      const profileRows = (profiles ?? []) as unknown as Profile[];
-      const profileById = new Map(profileRows.map((profile) => [profile.id, profile]));
       if (!active) return;
       setLikeCount(count ?? 0);
       setLiked(Boolean(ownLike));
       setSaved(Boolean(ownSave));
-      setComments(commentRows.map((comment) => ({ ...comment, author: profileById.get(comment.author_id) ?? null })));
+      if (commentsResult) {
+        setComments(commentsResult.comments);
+        setCommentCount(commentsResult.totalCount);
+        setCommentOffset(commentsResult.nextOffset);
+        setHasMoreComments(commentsResult.hasMore);
+        setCommentsLoadError(null);
+      } else {
+        setCommentsLoadError("Les retours ne peuvent pas être chargés pour le moment.");
+      }
       setSocialLoading(false);
     }
     void loadSocialData();
@@ -95,6 +141,26 @@ export function ResourceDetail({ resource, author, currentUserId }: Props) {
     setActionLoading(null);
   }
 
+  async function loadMoreComments() {
+    if (loadingMoreComments || !hasMoreComments) return;
+    setLoadingMoreComments(true);
+    setCommentsLoadError(null);
+    try {
+      const page = await fetchCommentPage(resource.id, commentOffset);
+      setComments((current) => {
+        const existingIds = new Set(current.map((comment) => comment.id));
+        return [...current, ...page.comments.filter((comment) => !existingIds.has(comment.id))];
+      });
+      setCommentCount(page.totalCount);
+      setCommentOffset(page.nextOffset);
+      setHasMoreComments(page.hasMore);
+    } catch {
+      setCommentsLoadError("Les retours supplémentaires ne peuvent pas être chargés.");
+    } finally {
+      setLoadingMoreComments(false);
+    }
+  }
+
   async function submitComment(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const parsed = commentSchema.safeParse({ body: commentBody });
@@ -109,6 +175,7 @@ export function ResourceDetail({ resource, author, currentUserId }: Props) {
       return;
     }
     setComments((current) => [...current, { ...(data as Omit<ResourceComment, "author">), author: authorForCurrentUser(currentUserId) }]);
+    setCommentCount((current) => current === null ? null : current + 1);
     setCommentBody("");
     setActionLoading(null);
   }
@@ -165,6 +232,8 @@ export function ResourceDetail({ resource, author, currentUserId }: Props) {
       return;
     }
     setComments((current) => current.filter((item) => item.id !== comment.id));
+    setCommentCount((current) => current === null ? null : Math.max(0, current - 1));
+    setCommentOffset((current) => Math.max(0, current - 1));
     if (editingCommentId === comment.id) cancelEditingComment();
     setActionLoading(null);
   }
@@ -228,7 +297,7 @@ export function ResourceDetail({ resource, author, currentUserId }: Props) {
         {reportMessage ? <p className="form-success" style={{ marginTop: "16px" }}>{reportMessage}</p> : null}
 
         <section className="comments-section" aria-labelledby="comments-title">
-          <h2 id="comments-title"><MessageCircle size={20} style={{ verticalAlign: "-3px", marginRight: "6px" }} /> Retours de la promo</h2>
+          <h2 id="comments-title"><MessageCircle size={20} style={{ verticalAlign: "-3px", marginRight: "6px" }} /> Retours de la promo ({formatMetric(commentCount)})</h2>
           <form className="comment-form" onSubmit={(event) => void submitComment(event)}>
             <textarea value={commentBody} onChange={(event) => setCommentBody(event.target.value)} placeholder="Une précision, une correction ou un conseil pour les suivants…" aria-label="Votre commentaire" />
             <div className="inline-actions" style={{ justifyContent: "space-between" }}>
@@ -236,20 +305,40 @@ export function ResourceDetail({ resource, author, currentUserId }: Props) {
               <button className="button button-secondary button-small" disabled={actionLoading === "comment"} type="submit">{actionLoading === "comment" ? <LoaderCircle className="spin" size={15} /> : <Check size={15} />} Publier</button>
             </div>
           </form>
-          {socialLoading ? <div className="field-hint"><LoaderCircle className="spin" size={15} /> Chargement des retours…</div> : comments.length === 0 ? <p className="field-hint">Pas encore de retour. Le premier commentaire peut faire gagner du temps à toute une promo.</p> : comments.map((comment) => <Comment
-            key={comment.id}
-            comment={comment}
-            isOwner={comment.author_id === currentUserId}
-            isEditing={editingCommentId === comment.id}
-            editingBody={editingBody}
-            editError={editingCommentId === comment.id ? editCommentError : null}
-            busy={actionLoading === "edit-comment" || actionLoading === "delete-comment"}
-            onStartEditing={() => startEditingComment(comment)}
-            onCancelEditing={cancelEditingComment}
-            onEditingBodyChange={setEditingBody}
-            onSaveEdit={(event) => void saveCommentEdit(event)}
-            onDelete={() => void deleteComment(comment)}
-          />)}
+          {socialLoading ? (
+            <div className="field-hint"><LoaderCircle className="spin" size={15} /> Chargement des retours…</div>
+          ) : commentsLoadError && comments.length === 0 ? (
+            <p className="form-error" role="alert">{commentsLoadError}</p>
+          ) : comments.length === 0 ? (
+            <p className="field-hint">Pas encore de retour. Le premier commentaire peut faire gagner du temps à toute une promo.</p>
+          ) : (
+            <>
+              {comments.map((comment) => <Comment
+                key={comment.id}
+                comment={comment}
+                isOwner={comment.author_id === currentUserId}
+                isEditing={editingCommentId === comment.id}
+                editingBody={editingBody}
+                editError={editingCommentId === comment.id ? editCommentError : null}
+                busy={actionLoading === "edit-comment" || actionLoading === "delete-comment"}
+                onStartEditing={() => startEditingComment(comment)}
+                onCancelEditing={cancelEditingComment}
+                onEditingBodyChange={setEditingBody}
+                onSaveEdit={(event) => void saveCommentEdit(event)}
+                onDelete={() => void deleteComment(comment)}
+              />)}
+              {commentsLoadError ? <p className="form-error" role="alert">{commentsLoadError}</p> : null}
+              {hasMoreComments ? (
+                <div className="load-more-wrap">
+                  <button className="button button-secondary" disabled={loadingMoreComments} onClick={() => void loadMoreComments()} type="button">
+                    {loadingMoreComments ? <LoaderCircle className="spin" size={16} /> : null}
+                    {loadingMoreComments ? "Chargement…" : `Charger les ${COMMENT_PAGE_SIZE} suivants`}
+                  </button>
+                  <p className="field-hint">Les retours suivants restent disponibles en continuant le chargement.</p>
+                </div>
+              ) : null}
+            </>
+          )}
         </section>
       </article>
 
