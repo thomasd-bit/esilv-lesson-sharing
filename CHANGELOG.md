@@ -1,5 +1,12 @@
 # Journal des changements
 
+## [0.5.25] - 2026-08-12
+
+### Recherche
+
+- les recherches enregistrées acceptent désormais aussi le tri « Plus téléchargées », comme le promet l’interface ;
+- une migration dédiée met à jour la contrainte SQL sans modifier les recherches déjà enregistrées.
+
 ## [0.5.24] - 2026-08-12
 
 ### Sécurité et modération
