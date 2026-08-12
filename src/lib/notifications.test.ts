@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { filterNotifications, getNotificationPageCount, getNotificationPageRange, getNotificationRange, notificationResourceLabel, NOTIFICATION_PAGE_SIZE } from "@/lib/notifications";
+import { filterNotifications, getNotificationPageCount, getNotificationPageRange, getNotificationRange, isNotificationUnread, notificationResourceLabel, NOTIFICATION_PAGE_SIZE } from "@/lib/notifications";
 
 describe("filtre des notifications", () => {
   const notifications = [
@@ -19,6 +19,12 @@ describe("filtre des notifications", () => {
   it("signale quand la ressource d’une notification n’est plus accessible", () => {
     expect(notificationResourceLabel("Fiche de calcul")).toBe("Fiche de calcul");
     expect(notificationResourceLabel(null)).toBe("une ressource devenue indisponible");
+  });
+
+  it("identifie une notification non lue sans dépendre de son affichage", () => {
+    expect(isNotificationUnread(null)).toBe(true);
+    expect(isNotificationUnread(undefined)).toBe(true);
+    expect(isNotificationUnread("2026-08-12T10:00:00.000Z")).toBe(false);
   });
 
   it("calcule des pages de notifications sans recouvrir la page précédente", () => {

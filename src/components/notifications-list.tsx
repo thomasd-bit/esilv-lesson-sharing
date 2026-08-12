@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { Bell, CheckCheck, Heart, LoaderCircle, MessageCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatDate, formatMetric, notificationMessage } from "@/lib/format";
-import { filterNotifications, getNotificationRange, notificationResourceLabel, NOTIFICATION_PAGE_SIZE, type NotificationFilter } from "@/lib/notifications";
+import { filterNotifications, getNotificationRange, isNotificationUnread, notificationResourceLabel, NOTIFICATION_PAGE_SIZE, type NotificationFilter } from "@/lib/notifications";
 import { createClient } from "@/lib/supabase/client";
 import type { AppNotification, Profile } from "@/lib/types";
 
@@ -24,6 +25,7 @@ type NotificationPage = {
 const notificationSelect = "id, recipient_id, actor_id, resource_id, comment_id, type, created_at, read_at";
 
 export function NotificationsList({ userId }: { userId: string }) {
+  const router = useRouter();
   const [notifications, setNotifications] = useState<NotificationView[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -141,9 +143,9 @@ export function NotificationsList({ userId }: { userId: string }) {
     }
   }
 
-  async function markAsRead(id: string) {
+  async function markAsRead(id: string): Promise<boolean> {
     const target = notifications.find((notification) => notification.id === id);
-    const wasUnread = Boolean(target && !target.read_at);
+    const wasUnread = Boolean(target && isNotificationUnread(target.read_at));
     const previousNotifications = notifications;
     const readAt = new Date().toISOString();
     if (filter === "unread" && wasUnread) {
@@ -160,9 +162,16 @@ export function NotificationsList({ userId }: { userId: string }) {
       if (filter === "unread" && wasUnread) setNextOffset((current) => current + 1);
       if (wasUnread) setUnreadCount((current) => current === null ? null : current + 1);
       setError("La notification n’a pas pu être marquée comme lue.");
-      return;
+      return false;
     }
     window.dispatchEvent(new Event("passerelle:notifications-changed"));
+    return true;
+  }
+
+  async function openNotification(event: React.MouseEvent<HTMLAnchorElement>, notificationId: string, href: string, unread: boolean) {
+    event.preventDefault();
+    if (unread) await markAsRead(notificationId);
+    router.push(href);
   }
 
   async function markAllAsRead() {
@@ -230,7 +239,7 @@ export function NotificationsList({ userId }: { userId: string }) {
         <>
           <div className="notification-list">
             {visibleNotifications.map((notification) => {
-              const unread = !notification.read_at;
+              const unread = isNotificationUnread(notification.read_at);
               const resourceAvailable = Boolean(notification.resourceTitle);
               const resourceHref = resourceAvailable && notification.resource_id ? `/resources/${notification.resource_id}` : null;
               const resourceLabel = notificationResourceLabel(notification.resourceTitle);
@@ -241,7 +250,7 @@ export function NotificationsList({ userId }: { userId: string }) {
                     {notification.type === "like" ? <Heart size={17} fill="currentColor" /> : <MessageCircle size={17} />}
                   </span>
                   <div className="notification-item-body">
-                    {resourceHref ? <Link className="notification-item-link" href={resourceHref} onClick={() => { if (unread) void markAsRead(notification.id); }}>{content}</Link> : <span className="notification-item-content">{content}</span>}
+                    {resourceHref ? <Link className="notification-item-link" href={resourceHref} onClick={(event) => void openNotification(event, notification.id, resourceHref, unread)}>{content}</Link> : <span className="notification-item-content">{content}</span>}
                   </div>
                   {unread ? <button className="notification-read-button" onClick={() => void markAsRead(notification.id)} type="button">Marquer comme lu</button> : null}
                 </article>
