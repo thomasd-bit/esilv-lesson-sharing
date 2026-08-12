@@ -1,6 +1,6 @@
 # Journal des changements
 
-## En préparation
+## [0.4.0] - 2026-08-12
 
 ### Ajouté
 
