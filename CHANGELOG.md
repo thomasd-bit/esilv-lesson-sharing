@@ -1,5 +1,11 @@
 # Journal des changements
 
+## [0.4.1] - 2026-08-12
+
+### Sécurité
+
+- signalements ouverts dédoublonnés par ressource et étudiant pour réduire le bruit de modération.
+
 ## [0.4.0] - 2026-08-12
 
 ### Ajouté

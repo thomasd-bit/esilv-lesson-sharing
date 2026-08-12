@@ -6,6 +6,7 @@ import { Bookmark, Check, ExternalLink, FileDown, Flag, Heart, LoaderCircle, Mes
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { formatDate, initials, wasEdited } from "@/lib/format";
+import { reportSubmissionMessage } from "@/lib/reports";
 import { commentSchema, firstValidationError } from "@/lib/validation";
 import { RESOURCE_KIND_LABELS, type Profile, type Resource, type ResourceComment } from "@/lib/types";
 
@@ -177,7 +178,7 @@ export function ResourceDetail({ resource, author, currentUserId }: Props) {
     event.preventDefault();
     if (reportReason.trim().length < 5) { setReportMessage("Décrivez rapidement le problème à signaler."); return; }
     const { error } = await createClient().from("resource_reports").insert({ resource_id: resource.id, reporter_id: currentUserId, reason: reportReason.trim() });
-    setReportMessage(error ? "Le signalement n’a pas pu être envoyé." : "Merci, le signalement a été transmis.");
+    setReportMessage(error ? reportSubmissionMessage(error.code) : "Merci, le signalement a été transmis.");
     if (!error) { setReportReason(""); setReporting(false); }
   }
 
