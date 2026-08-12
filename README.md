@@ -2,7 +2,7 @@
 
 Passerelle est un espace de partage entre étudiants du Pôle Léonard de Vinci. On y dépose les supports qui ont réellement servi : fiches, cours, annales, projets et liens utiles. Chaque ressource est attachée à une matière, une formation et une année pour rester retrouvable après la semaine des partiels.
 
-Le projet est volontairement simple dans son premier périmètre : un compte étudiant avec récupération de mot de passe et accompagnement pour compléter son profil, un fil de ressources, la recherche, l’édition des partages par leur auteur, les commentaires modifiables ou supprimables par leur auteur, les likes, les sauvegardes, les collections personnelles, les notifications d’interaction et un signalement intégré. Les fichiers sont privés dans Supabase Storage et accessibles uniquement aux membres connectés.
+Le projet est volontairement simple dans son premier périmètre : un compte étudiant avec récupération de mot de passe et accompagnement pour compléter son profil, un fil de ressources, la recherche, l’édition des partages par leur auteur, les commentaires modifiables ou supprimables par leur auteur, les likes, les sauvegardes, les collections personnelles, les notifications d’interaction filtrables par état de lecture et un signalement intégré. Les fichiers sont privés dans Supabase Storage et accessibles uniquement aux membres connectés.
 
 ## Stack
 

@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { Bell, CheckCheck, Heart, LoaderCircle, MessageCircle } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { formatDate, notificationMessage } from "@/lib/format";
+import { filterNotifications, type NotificationFilter } from "@/lib/notifications";
 import { createClient } from "@/lib/supabase/client";
 import type { AppNotification, Profile } from "@/lib/types";
 
@@ -19,6 +20,7 @@ export function NotificationsList({ userId }: { userId: string }) {
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<NotificationFilter>("all");
 
   useEffect(() => {
     let active = true;
@@ -97,6 +99,9 @@ export function NotificationsList({ userId }: { userId: string }) {
     setWorking(false);
   }
 
+  const unreadCount = notifications.filter((notification) => !notification.read_at).length;
+  const visibleNotifications = useMemo(() => filterNotifications(notifications, filter), [filter, notifications]);
+
   if (loading) {
     return <div className="empty-state"><LoaderCircle className="spin" size={25} /><h3>On regarde ce qui s’est passé.</h3><p>Les notifications arrivent.</p></div>;
   }
@@ -105,8 +110,6 @@ export function NotificationsList({ userId }: { userId: string }) {
     return <div className="empty-state"><Bell size={25} /><h3>Les notifications sont indisponibles.</h3><p>{error}</p></div>;
   }
 
-  const unreadCount = notifications.filter((notification) => !notification.read_at).length;
-
   return (
     <section className="notifications-panel" aria-labelledby="notifications-list-title">
       <div className="notifications-toolbar">
@@ -114,16 +117,24 @@ export function NotificationsList({ userId }: { userId: string }) {
           <span className="eyebrow">Votre activité</span>
           <h2 id="notifications-list-title">Les nouvelles de vos partages</h2>
         </div>
-        <button className="button button-secondary button-small" disabled={unreadCount === 0 || working} onClick={() => void markAllAsRead()} type="button">
-          {working ? <LoaderCircle className="spin" size={15} /> : <CheckCheck size={15} />} Tout marquer comme lu
-        </button>
+        <div className="notifications-toolbar-actions">
+          <div className="notification-filters" role="group" aria-label="Filtrer les notifications">
+            <button className={`notification-filter ${filter === "all" ? "notification-filter-active" : ""}`} onClick={() => setFilter("all")} type="button">Toutes <span>{notifications.length}</span></button>
+            <button className={`notification-filter ${filter === "unread" ? "notification-filter-active" : ""}`} onClick={() => setFilter("unread")} type="button">Non lues <span>{unreadCount}</span></button>
+          </div>
+          <button className="button button-secondary button-small" disabled={unreadCount === 0 || working} onClick={() => void markAllAsRead()} type="button">
+            {working ? <LoaderCircle className="spin" size={15} /> : <CheckCheck size={15} />} Tout marquer comme lu
+          </button>
+        </div>
       </div>
       {error ? <p className="form-error" role="alert">{error}</p> : null}
       {notifications.length === 0 ? (
         <div className="empty-state notifications-empty"><Bell size={25} /><h3>Rien de nouveau pour le moment.</h3><p>Quand un étudiant aimera ou commentera l’une de vos ressources, vous le verrez ici.</p><Link className="button button-coral" href="/resources/new">Partager une ressource</Link></div>
+      ) : visibleNotifications.length === 0 ? (
+        <div className="empty-state notifications-empty"><CheckCheck size={25} /><h3>Tout est lu.</h3><p>Aucune notification non lue pour le moment.</p><button className="button button-secondary" onClick={() => setFilter("all")} type="button">Voir toutes les notifications</button></div>
       ) : (
         <div className="notification-list">
-          {notifications.map((notification) => {
+          {visibleNotifications.map((notification) => {
             const unread = !notification.read_at;
             const href = notification.resource_id ? `/resources/${notification.resource_id}` : "/notifications";
             return (

@@ -997,6 +997,45 @@ code {
   border-bottom: 1px solid var(--line);
 }
 
+.notifications-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.notification-filters {
+  display: inline-flex;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--paper);
+}
+
+.notification-filter {
+  min-height: 30px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--muted);
+  background: transparent;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.notification-filter span {
+  margin-left: 3px;
+  color: inherit;
+  opacity: 0.7;
+}
+
+.notification-filter-active {
+  color: var(--blue-dark);
+  background: white;
+  box-shadow: 0 2px 7px rgba(25, 42, 58, 0.08);
+}
+
 .notifications-toolbar h2 {
   margin: 7px 0 0;
   font-family: Georgia, "Times New Roman", serif;
