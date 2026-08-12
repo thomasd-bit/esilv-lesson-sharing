@@ -13,6 +13,7 @@ const baseResource = {
   author_id: "author",
   status: "published" as const,
   updated_at: "2026-08-12T10:00:00.000Z",
+  download_count: 0,
   author: null,
 };
 

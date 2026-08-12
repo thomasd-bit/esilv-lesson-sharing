@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { ExternalLink, FileText, Heart } from "lucide-react";
+import { Download, ExternalLink, FileText, Heart } from "lucide-react";
 import { formatDate, initials } from "@/lib/format";
 import { RESOURCE_KIND_LABELS, type ResourceWithAuthor } from "@/lib/types";
 
 export function ResourceCard({ resource }: { resource: ResourceWithAuthor }) {
   const authorName = resource.author?.display_name ?? "Étudiant";
+  const downloadCount = Number(resource.download_count ?? 0);
 
   return (
     <Link className="resource-card" href={`/resources/${resource.id}`}>
@@ -18,10 +19,11 @@ export function ResourceCard({ resource }: { resource: ResourceWithAuthor }) {
       <h3>{resource.title}</h3>
       <p>{resource.description}</p>
       <div className="resource-card-footer">
-        <span>{resource.subject} · {resource.study_year}</span>
-        <span className="resource-card-attribution">
-          <span className="resource-card-likes" title={`${resource.like_count} appréciation${resource.like_count > 1 ? "s" : ""}`}><Heart size={13} fill={resource.like_count > 0 ? "currentColor" : "none"} /> {resource.like_count}</span>
-          <span title={authorName}>{initials(authorName)} · {formatDate(resource.created_at)}</span>
+          <span>{resource.subject} · {resource.study_year}</span>
+          <span className="resource-card-attribution">
+            <span className="resource-card-likes" title={`${resource.like_count} appréciation${resource.like_count > 1 ? "s" : ""}`}><Heart size={13} fill={resource.like_count > 0 ? "currentColor" : "none"} /> {resource.like_count}</span>
+            {resource.file_path ? <span className="resource-card-downloads" title={`${downloadCount} téléchargement${downloadCount > 1 ? "s" : ""}`}><Download size={13} /> {downloadCount}</span> : null}
+            <span title={authorName}>{initials(authorName)} · {formatDate(resource.created_at)}</span>
         </span>
       </div>
     </Link>

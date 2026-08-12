@@ -28,7 +28,7 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
   const resourceRange = getResourcePageRange(0);
   const { data: rawResources, count: resourceCount } = await supabase
     .from("resources")
-    .select("id, title, description, kind, subject, programme, study_year, link_url, file_path, author_id, status, like_count, created_at, updated_at", { count: "exact" })
+    .select("id, title, description, kind, subject, programme, study_year, link_url, file_path, author_id, status, like_count, download_count, created_at, updated_at", { count: "exact" })
     .eq("author_id", id)
     .eq("status", "published")
     .order("created_at", { ascending: false })

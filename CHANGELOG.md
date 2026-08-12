@@ -1,5 +1,12 @@
 # Journal des changements
 
+## [0.5.22] - 2026-08-12
+
+### Mainteneur
+
+- compteur agrégé des téléchargements de fichiers publiés, visible dans les cartes et les statistiques privées de modération ;
+- incrément protégé par une fonction RPC réservée aux étudiants connectés, sans collecte d’identité ou d’historique individuel ;
+
 ## [0.5.21] - 2026-08-12
 
 ### Découverte

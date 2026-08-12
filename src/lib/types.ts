@@ -25,6 +25,7 @@ export interface Resource {
   author_id: string;
   status: "published" | "hidden";
   like_count: number;
+  download_count: number;
   created_at: string;
   updated_at: string;
 }

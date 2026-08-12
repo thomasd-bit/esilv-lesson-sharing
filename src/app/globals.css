@@ -1040,7 +1040,8 @@ code {
 }
 
 .resource-card-attribution,
-.resource-card-likes {
+.resource-card-likes,
+.resource-card-downloads {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -1052,6 +1053,11 @@ code {
 
 .resource-card-likes {
   color: var(--coral);
+  font-weight: 700;
+}
+
+.resource-card-downloads {
+  color: var(--blue);
   font-weight: 700;
 }
 
@@ -1352,7 +1358,7 @@ code {
 }
 
 .moderation-usage-stats {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   margin: 22px 0 0;
 }
 

@@ -33,6 +33,7 @@ type UsageStats = {
   publishedResources: number | null;
   likes: number | null;
   comments: number | null;
+  downloads: number | null;
 };
 
 export const dynamic = "force-dynamic";
@@ -82,7 +83,7 @@ export default async function ModerationPage({ searchParams }: { searchParams: P
   if (filter !== "all") reportsQuery = reportsQuery.eq("status", filter);
   reportsQuery = reportsQuery.range(pageRange.from, pageRange.to);
 
-  const [reportsResult, allReportsCountResult, openReportsCountResult, reviewedReportsCountResult, closedReportsCountResult, accountsResult, resourcesResult, likesResult, commentsResult] = await Promise.all([
+  const [reportsResult, allReportsCountResult, openReportsCountResult, reviewedReportsCountResult, closedReportsCountResult, accountsResult, resourcesResult, likesResult, commentsResult, downloadsResult] = await Promise.all([
     reportsQuery,
     adminClient.from("resource_reports").select("id", { count: "exact", head: true }),
     adminClient.from("resource_reports").select("id", { count: "exact", head: true }).eq("status", "open"),
@@ -92,6 +93,7 @@ export default async function ModerationPage({ searchParams }: { searchParams: P
     adminClient.from("resources").select("id", { count: "exact", head: true }).eq("status", "published"),
     adminClient.from("resource_likes").select("resource_id", { count: "exact", head: true }),
     adminClient.from("resource_comments").select("id", { count: "exact", head: true }),
+    adminClient.from("resources").select("download_count").eq("status", "published"),
   ]);
 
   if (reportsResult.error) {
@@ -105,6 +107,7 @@ export default async function ModerationPage({ searchParams }: { searchParams: P
     publishedResources: resourcesResult.error ? null : resourcesResult.count ?? 0,
     likes: likesResult.error ? null : likesResult.count ?? 0,
     comments: commentsResult.error ? null : commentsResult.count ?? 0,
+    downloads: downloadsResult.error ? null : (downloadsResult.data ?? []).reduce((total, resource) => total + Number(resource.download_count ?? 0), 0),
   };
   const counts = {
     all: allReportsCountResult.error ? null : allReportsCountResult.count ?? 0,
@@ -174,6 +177,7 @@ export default async function ModerationPage({ searchParams }: { searchParams: P
         <div className="stat-card"><span className="stat-value">{formatMetric(usageStats.publishedResources)}</span><span className="stat-label">ressources publiées</span></div>
         <div className="stat-card"><span className="stat-value">{formatMetric(usageStats.likes)}</span><span className="stat-label">likes enregistrés</span></div>
         <div className="stat-card"><span className="stat-value">{formatMetric(usageStats.comments)}</span><span className="stat-label">commentaires écrits</span></div>
+        <div className="stat-card"><span className="stat-value">{formatMetric(usageStats.downloads)}</span><span className="stat-label">téléchargements</span></div>
       </div>
       <p className="moderation-usage-note">Ces compteurs décrivent l’activité cumulée dans Supabase ; ils ne constituent pas une mesure d’utilisateurs actifs.</p>
     </section>

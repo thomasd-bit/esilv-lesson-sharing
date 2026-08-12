@@ -24,7 +24,7 @@ type SavedPage = {
   collectionsError: boolean;
 };
 
-const resourceSelect = "id, title, description, kind, subject, programme, study_year, link_url, file_path, author_id, status, like_count, created_at, updated_at";
+const resourceSelect = "id, title, description, kind, subject, programme, study_year, link_url, file_path, author_id, status, like_count, download_count, created_at, updated_at";
 
 async function fetchSavedPage(userId: string, offset: number, collections: ResourceCollection[]): Promise<SavedPage> {
   const supabase = createClient();

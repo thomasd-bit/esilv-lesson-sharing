@@ -63,6 +63,7 @@ export function ResourceDetail({ resource, author, currentUserId }: Props) {
   const [likeCount, setLikeCount] = useState(0);
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [downloadCount, setDownloadCount] = useState(Number(resource.download_count ?? 0));
   const [comments, setComments] = useState<ResourceComment[]>([]);
   const [commentCount, setCommentCount] = useState<number | null>(null);
   const [commentOffset, setCommentOffset] = useState(0);
@@ -165,7 +166,13 @@ export function ResourceDetail({ resource, author, currentUserId }: Props) {
       if (error || !data?.signedUrl) {
         setActionError(getResourceActionErrorMessage("file"));
       } else {
-        window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+        const downloadWindow = window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+        if (!downloadWindow) {
+          setActionError(getResourceActionErrorMessage("file"));
+          return;
+        }
+        const { error: countError } = await createClient().rpc("record_resource_download", { target_resource_id: resource.id });
+        if (!countError) setDownloadCount((count) => count + 1);
       }
     } catch {
       setActionError(getResourceActionErrorMessage("file"));
@@ -352,7 +359,7 @@ export function ResourceDetail({ resource, author, currentUserId }: Props) {
         <p className="detail-description">{resource.description}</p>
         <div className="detail-actions">
           {resource.link_url ? <a className="button button-primary button-small" href={resource.link_url} target="_blank" rel="noreferrer"><ExternalLink size={15} /> Ouvrir le lien</a> : null}
-          {resource.file_path ? <button className="button button-primary button-small" onClick={() => void downloadFile()} disabled={actionLoading === "file"} type="button">{actionLoading === "file" ? <LoaderCircle className="spin" size={15} /> : <FileDown size={15} />} Télécharger le fichier</button> : null}
+          {resource.file_path ? <button className="button button-primary button-small" onClick={() => void downloadFile()} disabled={actionLoading === "file"} type="button">{actionLoading === "file" ? <LoaderCircle className="spin" size={15} /> : <FileDown size={15} />} Télécharger le fichier · {formatMetric(downloadCount)}</button> : null}
           <button className="action-button" onClick={() => void shareResource()} disabled={shareState === "sharing"} type="button">{shareState === "sharing" ? <LoaderCircle className="spin" size={15} /> : <Share2 size={15} />} {shareState === "sharing" ? "Préparation…" : "Partager"}</button>
           <button className={`action-button ${liked ? "action-button-active" : ""}`} onClick={() => void toggleLike()} disabled={actionLoading === "like"} type="button"><Heart size={15} fill={liked ? "currentColor" : "none"} /> {likeCount}</button>
           <button className={`action-button ${saved ? "action-button-active" : ""}`} onClick={() => void toggleSave()} disabled={actionLoading === "save"} type="button"><Bookmark size={15} fill={saved ? "currentColor" : "none"} /> {saved ? "Enregistré" : "Garder"}</button>

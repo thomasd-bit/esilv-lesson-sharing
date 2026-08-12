@@ -23,7 +23,8 @@ Le dépôt expose aussi la [PR initiale fusionnée](https://github.com/thomasd-b
 
 - comptes confirmés avec domaine étudiant, sans enregistrer le contenu des messages ni les mots de passe ;
 - ressources publiées, ressources enregistrées et commentaires créés par semaine ;
-- part des ressources qui reçoivent au moins un like, une sauvegarde ou un commentaire ;
+- part des ressources qui reçoivent au moins un like, une sauvegarde, un commentaire ou un téléchargement ;
+- nombre agrégé de téléchargements de fichiers publiés ; ce signal mesure une action, pas le nombre de personnes distinctes ;
 - nombre de recherches enregistrées par compte ; la réutilisation n’est pas comptée tant qu’aucun événement de consultation dédié n’est conservé ;
 - erreurs d’upload et signalements ouverts/résolus ;
 - retours qualitatifs issus du [formulaire public de feedback](https://github.com/thomasd-bit/esilv-lesson-sharing/issues/new?template=student-feedback.yml).
